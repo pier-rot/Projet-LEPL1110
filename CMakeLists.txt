@@ -49,7 +49,7 @@ include_directories(${GMSH_INCLUDE_DIR})
 
 
 # link the aforementioned libraries
-add_executable(${EXEC_NAME} src/fem.c src/glfem.c src/homework.c src/main.c)
+add_executable(${EXEC_NAME} src/fem.c src/glfem.c src/homework.c src/main.c src/mesh.c)
 target_link_libraries(${EXEC_NAME} glfw ${OPENGL_gl_LIBRARY} ${GMSH_LIBRARY})
 
 if(APPLE)
