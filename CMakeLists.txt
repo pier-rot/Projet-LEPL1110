@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
-project(myFemProject)
+project(bowProject)
 
-set(EXEC_NAME myFem)
+set(EXEC_NAME bow)
 
 # Set GMSH Version : example gmsh-4.12.2 -> GMSH_VERSION=gmsh-4.12, GMSH_MINOR=2
 set(GMSH_VERSION gmsh-4.13)
@@ -9,11 +9,12 @@ set(GMSH_MINOR 1)
 
 # OpenGL
 find_package(OpenGL REQUIRED)
+set(OpenGL_GL_PREFERENCE "GLVND")
 include_directories(${OPENGL_INCLUDE_DIR})
 
 # GLFW
-add_subdirectory(glfw)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glfw/include)
+# add_subdirectory(glfw)
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glfw/include)
 
 # GMSH
 if(MSVC OR MSYS OR MINGW)
@@ -48,9 +49,10 @@ message("GMSH_LIBRARY : ${GMSH_LIBRARY}")
 include_directories(${GMSH_INCLUDE_DIR})
 
 
+
 # link the aforementioned libraries
-add_executable(${EXEC_NAME} src/fem.c src/glfem.c src/homework.c src/main.c src/mesh.c)
-target_link_libraries(${EXEC_NAME} glfw ${OPENGL_gl_LIBRARY} ${GMSH_LIBRARY})
+add_executable(${EXEC_NAME} src/fem.c src/mesh.c src/main.c)
+target_link_libraries(${EXEC_NAME} ${OPENGL_gl_LIBRARY} ${GMSH_LIBRARY})
 
 if(APPLE)
     target_compile_options(${EXEC_NAME} PRIVATE "-Wdeprecated-declarations")
