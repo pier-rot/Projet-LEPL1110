@@ -60,3 +60,4 @@ Makefile
 CMake/
 myFem
 gmsh/
+bow
