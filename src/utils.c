@@ -126,24 +126,56 @@ femGeo* geoRead(const char* filename){
     }
 
     // Read the number of triangles
-    fscanf(file, "Number of triangles %d\n", &mesh->nElem);
+    char elemType[16];
+    fscanf(file, "Number of %s %d\n", elemType, &mesh->nElem);
+    if (strcmp(elemType, "triangles") == 0) {
+        geo->elementType = FEM_TRIANGLE;
+        mesh->nLocalNode = 3;
 
-    mesh->elem = (int*)malloc(mesh->nElem * 3 * sizeof(int));
-    if (mesh->elem == NULL) {
-        fprintf(stderr, "Memory allocation failed for triangle indices.\n");
+        mesh->elem = (int*)malloc(mesh->nElem * 3 * sizeof(int));
+        if (mesh->elem == NULL) {
+            fprintf(stderr, "Memory allocation failed for triangle indices.\n");
+            geoFree(geo);
+            return NULL;
+        }
+        // Read the triangles indices
+        for (int i = 0; i < mesh->nElem; i++) {
+            fscanf(file, "%6d : %6d %6d %6d\n", &i, &mesh->elem[3*i], &mesh->elem[3*i+1], &mesh->elem[3*i+2]);
+        }
+    } else if (strcmp(elemType, "quads") == 0) {
+        geo->elementType = FEM_QUAD;
+        mesh->nLocalNode = 4;
+
+        mesh->elem = (int*)malloc(mesh->nElem * 4 * sizeof(int));
+        if (mesh->elem == NULL) {
+            fprintf(stderr, "Memory allocation failed for quad indices.\n");
+            geoFree(geo);
+            return NULL;
+        }
+        // Read the quads indices
+        for (int i = 0; i < mesh->nElem; i++) {
+            fscanf(file, "%6d : %6d %6d %6d %6d\n", &i, &mesh->elem[4*i], &mesh->elem[4*i+1], &mesh->elem[4*i+2], &mesh->elem[4*i+3]);
+        }
+    } else if (strcmp(elemType, "edges") == 0) {
+        geo->elementType = FEM_EDGE;
+        mesh->nLocalNode = 2;
+    
+        mesh->elem = (int*)malloc(mesh->nElem * 2 * sizeof(int));
+        if (mesh->elem == NULL) {
+            fprintf(stderr, "Memory allocation failed for edge indices.\n");
+            geoFree(geo);
+            return NULL;
+        }
+        // Read the edges indices
+        for (int i = 0; i < mesh->nElem; i++) {
+            fscanf(file, "%6d : %6d %6d\n", &i, &mesh->elem[2*i], &mesh->elem[2*i+1]);
+        }
+    } else {
+        fprintf(stderr, "Invalid element type: %s\n", elemType);
         geoFree(geo);
         return NULL;
     }
 
-    // Read the triangles indices
-    for (int i = 0; i < mesh->nElem; i++) {
-        fscanf(file, "%6d : %6d %6d %6d\n", &i, &mesh->elem[3*i], &mesh->elem[3*i+1], &mesh->elem[3*i+2]);
-    }
-
-    // Print the triangles
-    // for (int i = 0; i < mesh->nElem; i++) {
-        // printf("%6d : %6d %6d %6d\n", i, mesh->elem[3*i], mesh->elem[3*i+1], mesh->elem[3*i+2]);
-    // }
 
     // Read the number of domains
     fscanf(file, "Number of domains %d\n", &geo->nDomains);
@@ -188,6 +220,16 @@ void geoPrint(femGeo* geo){
     printf("Number of elements: %d\n", geo->mesh->nElem);
     printf("Number of edges: %d\n", geo->edges->nElem);
     printf("Number of domains: %d\n", geo->nDomains);
+    printf("Element type: ");
+    if (geo->elementType == FEM_TRIANGLE) {
+        printf("Triangles\n");
+    } else if (geo->elementType == FEM_QUAD) {
+        printf("Quads\n");
+    } else if (geo->elementType == FEM_EDGE) {
+        printf("Edges\n");
+    } else {
+        printf("Unknown\n");
+    }
 
     for(int iDomain = 0; iDomain < geo->nDomains; iDomain++) {
         printf("  Domain : %6d \n", iDomain);
