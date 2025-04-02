@@ -1,8 +1,37 @@
 #include <stdio.h>
 #include <math.h>
+#include "utils.h"
+
+#define MAXFILENAMELENGTH 256
 
 int main(int argc, char const *argv[])
 {
-    printf("Hello, World!\n");
+    char meshfile[MAXFILENAMELENGTH];
+    char problemfile[MAXFILENAMELENGTH];
+    
+    if (argc < 3){
+        printf("Not enough arguments provided.\n");
+        printf("Usage: %s <mesh_path> <problem_path>\n", argv[0]);
+        printf("Using default mesh and problem files.\n\n");
+        
+        sprintf(meshfile, "%s", "./data/mesh.txt");
+        sprintf(problemfile, "%s", "./data/problem.txt");
+
+        printf("Using \"%s\" as the mesh file.\n", meshfile);
+        printf("Using \"%s\" as the problem file.\n", problemfile);
+    } else if (argc == 3){
+        printf("Correct number of arguments provided.\n\n");
+        
+        sprintf(meshfile, "%s", argv[1]);
+        sprintf(problemfile, "%s", argv[2]);
+
+        printf("Using \"%s\" as the mesh file.\n", meshfile);
+        printf("Using \"%s\" as the problem file.\n", problemfile);
+        
+    } else {
+        printf("Too many arguments provided.\n");
+        return 1;
+    }
+    
     return 0;
 }
