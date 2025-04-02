@@ -1,5 +1,4 @@
 #include "fem.h"
-#include <math.h>
 
 double geoSize(double x, double y)
 {
