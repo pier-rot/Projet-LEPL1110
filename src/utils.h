@@ -65,6 +65,27 @@ typedef struct {
     double value;
 } femBoundaryCondition;
 
+typedef struct {
+    double E,nu,rho,g;
+    double A,B,C;
+    int planarStrainStress;
+    int nBoundaryConditions;
+    femBoundaryCondition** conditions;  
+    int* constrainedNodes;
+
+    // not sure if needed
+    double* soluce;
+    double* residuals;
+
+
+    femGeo* geometry;
+    femDiscrete* space;
+    femIntegration* rule;
+    femDiscrete* spaceEdge;
+    femIntegration* ruleEdge;
+    femFullSystem* system;
+} femProblem;
+
 femGeo* geoRead(const char *filename);
 femGeo* geoInit();
 void geoFree(femGeo* geo);
