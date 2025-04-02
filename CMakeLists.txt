@@ -51,8 +51,8 @@ include_directories(${GMSH_INCLUDE_DIR})
 
 
 # link the aforementioned libraries
-add_executable(${EXEC_NAME} src/fem.c src/mesh.c src/main.c)
-target_link_libraries(${EXEC_NAME} ${OPENGL_gl_LIBRARY} ${GMSH_LIBRARY})
+add_executable(${EXEC_NAME} src/fem.c src/mesh.c src/main.c src/fem.h)
+target_link_libraries(${EXEC_NAME} -lm ${OPENGL_gl_LIBRARY} ${GMSH_LIBRARY})
 
 if(APPLE)
     target_compile_options(${EXEC_NAME} PRIVATE "-Wdeprecated-declarations")
