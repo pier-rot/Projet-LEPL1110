@@ -9,6 +9,7 @@ int main(int argc, char const *argv[])
     char meshfile[MAXFILENAMELENGTH];
     char problemfile[MAXFILENAMELENGTH];
     
+    // Check if the correct number of arguments are provided
     if (argc < 3){
         printf("Not enough arguments provided.\n");
         printf("Usage: %s <mesh_path> <problem_path>\n", argv[0]);
@@ -32,6 +33,15 @@ int main(int argc, char const *argv[])
         printf("Too many arguments provided.\n");
         return 1;
     }
-    
+
+    // Initialize the femGeo structure
+    femGeo* geo = geoRead(meshfile);
+    if (geo == NULL) {
+        fprintf(stderr, "Failed to initialize femGeo structure.\n");
+        return 1;
+    }
+
+    // geoPrint(geo);
+
     return 0;
 }
