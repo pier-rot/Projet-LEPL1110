@@ -748,15 +748,15 @@ Number of triangles 347
    346 :     75     80     74
 Number of domains 7
   Domain :      0 
-  Name : Entity 0 
+  Name : Entity_0 
   Number of elements :      3
      0     1     2
   Domain :      1 
-  Name : Entity 1 
+  Name : Entity_1 
   Number of elements :      5
      3     4     5     6     7
   Domain :      2 
-  Name : Entity 2 
+  Name : Entity_2 
   Number of elements :     58
      8     9    10    11    12    13    14    15    16    17
     18    19    20    21    22    23    24    25    26    27
@@ -765,15 +765,15 @@ Number of domains 7
     48    49    50    51    52    53    54    55    56    57
     58    59    60    61    62    63    64    65
   Domain :      3 
-  Name : Entity 3 
+  Name : Entity_3 
   Number of elements :      1
     66
   Domain :      4 
-  Name : Entity 4 
+  Name : Entity_4 
   Number of elements :      9
     67    68    69    70    71    72    73    74    75
   Domain :      5 
-  Name : Entity 5 
+  Name : Entity_5 
   Number of elements :     68
     76    77    78    79    80    81    82    83    84    85
     86    87    88    89    90    91    92    93    94    95
@@ -783,6 +783,6 @@ Number of domains 7
    126   127   128   129   130   131   132   133   134   135
    136   137   138   139   140   141   142   143
   Domain :      6 
-  Name : Entity 6 
+  Name : Entity_6 
   Number of elements :      5
    144   145   146   147   148
