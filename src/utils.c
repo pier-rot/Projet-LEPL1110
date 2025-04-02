@@ -103,7 +103,6 @@ femGeo* geoRead(const char* filename){
 
     // Read the number of nodes
     fscanf(file, "Number of nodes %d\n", &nodes->nNodes);
-    // printf("Number of nodes: %d\n", nodes->nNodes);
     nodes->X = (double*)malloc(nodes->nNodes * sizeof(double));
     nodes->Y = (double*)malloc(nodes->nNodes * sizeof(double));
     
@@ -119,28 +118,15 @@ femGeo* geoRead(const char* filename){
         fscanf(file, "%6d : %14le %14le\n", &i, &nodes->X[i], &nodes->Y[i]);
     }
 
-    // Print the node coordinates
-    // printf("Node coordinates:\n");
-    // for (int i = 0; i < nodes->nNodes; i++) {
-        // printf("%6d : %14.7e %14.7e \n", i, nodes->X[i], nodes->Y[i]);
-    // }
-
     // Read the number of edges
     fscanf(file, "Number of edges %d\n", &edges->nElem);
-    printf("Number of edges: %d\n", edges->nElem);
     edges->elem = (int*)malloc(edges->nElem * 2 * sizeof(int));
     for(int i = 0; i < edges->nElem; i++){
         fscanf(file, "%6d : %6d %6d\n", &i, &edges->elem[2*i], &edges->elem[2*i+1]);
     }
 
-    // Print the edges
-    // for(int i = 0; i < edges->nElem; i++) {
-        // printf("%6d : %6d %6d\n", i, edges->elem[2*i], edges->elem[2*i+1]);
-    // }
-
     // Read the number of triangles
     fscanf(file, "Number of triangles %d\n", &mesh->nElem);
-    printf("Number of elements: %d\n", mesh->nElem);
 
     mesh->elem = (int*)malloc(mesh->nElem * 3 * sizeof(int));
     if (mesh->elem == NULL) {
@@ -161,7 +147,6 @@ femGeo* geoRead(const char* filename){
 
     // Read the number of domains
     fscanf(file, "Number of domains %d\n", &geo->nDomains);
-    printf("Number of domains: %d\n", geo->nDomains);
     geo->domains = (femDomain**)malloc(geo->nDomains * sizeof(femDomain*));
     if (geo->domains == NULL) {
         fprintf(stderr, "Memory allocation failed for domains.\n");
@@ -194,7 +179,16 @@ femGeo* geoRead(const char* filename){
 
     }
 
-    // Print the domains
+    fclose(file);
+    return geo;
+}
+
+void geoPrint(femGeo* geo){
+    printf("Number of nodes: %d\n", geo->nodes->nNodes);
+    printf("Number of elements: %d\n", geo->mesh->nElem);
+    printf("Number of edges: %d\n", geo->edges->nElem);
+    printf("Number of domains: %d\n", geo->nDomains);
+
     for(int iDomain = 0; iDomain < geo->nDomains; iDomain++) {
         printf("  Domain : %6d \n", iDomain);
         printf("  Name : %s \n", geo->domains[iDomain]->name);
@@ -207,19 +201,5 @@ femGeo* geoRead(const char* filename){
             }
         }
         printf("\n");
-    }
-
-
-
-    fclose(file);
-    return geo;
-}
-
-void geoPrint(femGeo* geo){
-    printf("Number of nodes: %d\n", geo->nodes->nNodes);
-    printf("Number of elements: %d\n", geo->mesh->nElem);
-    printf("Number of edges: %d\n", geo->edges->nElem);
-    for (int i = 0; i < geo->nDomains; i++) {
-        printf("Domain %d: %s\n", i, geo->domains[i]->name);
     }
 }

@@ -41,7 +41,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
-    // geoPrint(geo);
+    geoPrint(geo);
 
     return 0;
 }
