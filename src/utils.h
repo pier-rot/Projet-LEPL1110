@@ -57,7 +57,7 @@ typedef struct {
     double* B;
     double** A;
     int size;
-} femSystem;
+} femFullSystem;
 
 femGeo* geoRead(const char *filename);
 femGeo* geoInit();
