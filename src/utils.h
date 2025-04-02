@@ -59,6 +59,12 @@ typedef struct {
     int size;
 } femFullSystem;
 
+typedef struct {
+    femDomain* domain;
+    femBoundaryType type; 
+    double value;
+} femBoundaryCondition;
+
 femGeo* geoRead(const char *filename);
 femGeo* geoInit();
 void geoFree(femGeo* geo);
