@@ -47,4 +47,6 @@ typedef struct {
 
 
 void geoSetSizeCallback(double (*geoSize)(double x, double y));
+void geoMeshGenerate();
+double geoSize(double x, double y);
 #endif
