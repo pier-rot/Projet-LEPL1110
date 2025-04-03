@@ -488,3 +488,122 @@ void femDiscretePrint(femDiscrete *mySpace)
                 printf("   dphideta(%d)=%+.1f \n", j, dphideta[j]); }
             printf(" \n"); }}   
 }
+
+void femFullSystemAlloc(femFullSystem* system, int size){
+    int i;
+    double* elem = (double*) malloc(sizeof(double) * size * (size +1));
+    system->A = (double**) malloc(sizeof(double*) * size);
+    system->B = elem;
+    system->A[0] = elem + size;
+    system->size = size;
+    for (i = 1; i < size; i++) {
+        system->A[i] = system->A[i - 1] + size;
+    }
+}
+
+void femFullSystemInit(femFullSystem* system){
+    int i, size = system->size;
+    for ( i = 0; i < size*(size+1); i++){
+        system->B[i] = 0.0;
+    }
+}
+
+femFullSystem* femFullSystemCreate(int size){
+    femFullSystem* system = (femFullSystem*) malloc(sizeof(femFullSystem));
+    if (system == NULL) {
+        fprintf(stderr, "Memory allocation failed for femFullSystem structure.\n");
+        return NULL;
+    }
+    
+    femFullSystemAlloc(system, size);
+    femFullSystemInit(system);
+    return system;
+}
+
+void femFullSystemFree(femFullSystem* system){
+    if (system != NULL) {
+        free(system->A);
+        free(system->B);
+        free(system);
+    }
+}
+
+void femFullSystemPrint(femFullSystem* system){
+    double **A, *B;
+    int i,j,size;
+    
+    A = system->A;
+    B = system->B;
+    size = system->size;
+
+    for(i = 0; i< size; i++){
+        for(j = 0; j < size; j++){
+            if (A[i][j] == 0) printf("         ");
+            else printf("%+.2f ", A[i][j]);
+        }
+        printf(" : %+.1e \n", B[i]);
+    }
+}
+
+double* femFullSystemEliminate(femFullSystem* system){
+    double** A;
+    double* B;
+    double factor;
+    int i,j,k,size;
+
+    A = system->A;
+    B = system->B;
+    size = system->size;
+
+    // Gaussian elimination
+    for (k=0; k < size; k++){
+        if (fabs(A[k][k] <= 1e-16)){
+            printf("Pivot is %e at index %d\nCannot eliminate\n", A[k][k], k);
+            return NULL;
+        }
+        for (i=k+1; i<size; i++){
+            factor = A[i][k] / A[k][k];
+            for (j=k+1; j<size; j++){
+                A[i][j] -= factor * A[k][j];
+            }
+            B[i] -= factor * B[k];
+        }
+    }
+
+    // Back substitution
+    for(i = size-1; i>= 0; i--){
+        factor = 0;
+        for (j=i+1; j<size; j++){
+            factor += A[i][j] * B[j];
+        }
+        B[i] = (B[i] - factor) / A[i][i];      
+    }
+
+    return(system->B);
+}
+
+void femFullSystemConstrain(femFullSystem* system, int node, double value){
+    double** A;
+    double* B;
+    int i, size;
+
+    A = system->A;
+    B = system->B;
+    size = system->size;
+    if (node < 0 || node >= size) {
+        fprintf(stderr, "Invalid node index: %d\n", node);
+        return;
+    }
+
+    for(i = 0; i < size; i++){
+        B[i] -= A[i][node] * value;
+        A[i][node] = 0.0;
+    }
+
+    for(i = 0; i < size; i++){
+        A[node][i] = 0.0;
+    }
+
+    A[node][node] = 1.0;
+    B[node] = value;
+}

@@ -115,4 +115,13 @@ void femDiscretePhi(femDiscrete* mySpace, double xsi, double *phi);
 void femDiscreteDphi(femDiscrete* mySpace, double xsi, double *dphidxsi);
 void femDiscretePrint(femDiscrete *mySpace);
 
+// System functions
+void femFullSystemAlloc(femFullSystem* system, int size);
+void femFullSystemInit(femFullSystem* system);
+femFullSystem* femFullSystemCreate(int size);
+void femFullSystemFree(femFullSystem* system);
+void femFullSystemPrint(femFullSystem* system);
+double* femFullSystemEliminate(femFullSystem* system);
+void femFullSystemConstrain(femFullSystem* system, int node, double value);
+
 #endif
