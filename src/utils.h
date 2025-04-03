@@ -92,11 +92,27 @@ typedef struct {
     femFullSystem* system;
 } femProblem;
 
+// Geometry functions
 femGeo* geoRead(const char *filename);
 femGeo* geoInit();
 void geoFree(femGeo* geo);
 void geoPrint(femGeo* geo);
 void geoSetDomain(femGeo* geo, int iDomain, char* name);
 int geoGetDomain(femGeo* geo, char* name);
+
+// Integration functions
+femIntegration* femIntegrationCreate(int n, femElementType type);
+void femIntegrationFree(femIntegration* rule);
+
+// Discretisation functions
+femDiscrete* femDiscreteCreate(int n, femElementType type);
+void femDiscreteFree(femDiscrete* mySpace);
+void femDiscreteXsi2(femDiscrete* mySpace, double *xsi, double *eta);
+void femDiscretePhi2(femDiscrete* mySpace, double xsi, double eta, double *phi);
+void femDiscreteDphi2(femDiscrete* mySpace, double xsi, double eta, double *dphidxsi, double *dphideta);
+void femDiscreteXsi(femDiscrete* mySpace, double *xsi);
+void femDiscretePhi(femDiscrete* mySpace, double xsi, double *phi);
+void femDiscreteDphi(femDiscrete* mySpace, double xsi, double *dphidxsi);
+void femDiscretePrint(femDiscrete *mySpace);
 
 #endif
