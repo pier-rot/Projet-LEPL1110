@@ -381,3 +381,110 @@ void _q1c0_dphidx(double xsi, double eta, double *dphidxsi, double *dphideta)
     dphideta[3] = - (1.0 + xsi) / 4.0;
 
 }
+
+femDiscrete* femDiscreteCreate(int n, femElementType type){
+    femDiscrete* discrete = (femDiscrete*) malloc(sizeof(femDiscrete));
+    if (discrete == NULL) {
+        fprintf(stderr, "Memory allocation failed for femDiscrete structure.\n");
+        return NULL;
+    }
+    discrete->n = 0;
+    discrete->type = type;
+
+    discrete->x = NULL;
+    discrete->phi = NULL;
+    discrete->dphidx = NULL;
+    discrete->x2 = NULL;
+    discrete->phi2 = NULL;
+    discrete->dphi2dx = NULL;
+
+    if (type == FEM_EDGE && n == 2){
+        discrete->n = n;
+        discrete->x = _e1c0_x;
+        discrete->phi = _e1c0_phi;
+        discrete->dphidx = _e1c0_dphidx;
+    } else if (type == FEM_TRIANGLE && n == 3){
+        discrete->n = n;
+        discrete->x2 = _p1c0_x;
+        discrete->phi2 = _p1c0_phi;
+        discrete->dphi2dx = _p1c0_dphidx;
+    } else if (type == FEM_QUAD && n == 4){
+        discrete->n = n;
+        discrete->x2 = _q1c0_x;
+        discrete->phi2 = _q1c0_phi;
+        discrete->dphi2dx = _q1c0_dphidx;
+    } else {
+        fprintf(stderr, "Invalid discrete rule for element type.\n");
+        free(discrete);
+        return NULL;
+    }
+    return discrete;
+}
+
+void femDiscreteFree(femDiscrete* discrete){
+    if (discrete != NULL) {
+        free(discrete);
+    }
+}
+
+// Functions to compute different values from the discrete spaces
+void femDiscreteXsi2(femDiscrete* mySpace, double *xsi, double *eta)
+{
+    mySpace->x2(xsi,eta);
+}
+
+void femDiscretePhi2(femDiscrete* mySpace, double xsi, double eta, double *phi)
+{
+    mySpace->phi2(xsi,eta,phi);
+}
+
+void femDiscreteDphi2(femDiscrete* mySpace, double xsi, double eta, double *dphidxsi, double *dphideta)
+{
+    mySpace->dphi2dx(xsi,eta,dphidxsi,dphideta);
+}
+
+void femDiscreteXsi(femDiscrete* mySpace, double *xsi)
+{
+    mySpace->x(xsi);
+}
+
+void femDiscretePhi(femDiscrete* mySpace, double xsi, double *phi)
+{
+    mySpace->phi(xsi,phi);
+}
+
+void femDiscreteDphi(femDiscrete* mySpace, double xsi, double *dphidxsi)
+{
+    mySpace->dphidx(xsi,dphidxsi);
+}
+
+// Print the discrete space
+void femDiscretePrint(femDiscrete *mySpace)
+{
+    int i,j;
+    int n = mySpace->n;
+    double xsi[4], eta[4], phi[4], dphidxsi[4], dphideta[4];
+
+    if (mySpace->type == FEM_EDGE) {
+        femDiscreteXsi(mySpace,xsi);
+        for (i=0; i < n; i++) {           
+            femDiscretePhi(mySpace,xsi[i],phi);
+            femDiscreteDphi(mySpace,xsi[i],dphidxsi);
+            for (j=0; j < n; j++)  {
+                printf("(xsi=%+.1f) : ",xsi[i]);
+                printf(" phi(%d)=%+.1f",j,phi[j]);  
+                printf("   dphidxsi(%d)=%+.1f \n",j,dphidxsi[j]); }
+            printf(" \n"); }}
+    
+    if (mySpace->type == FEM_QUAD || mySpace->type == FEM_TRIANGLE) {
+        femDiscreteXsi2(mySpace, xsi, eta);
+        for (i = 0; i < n; i++)  {    
+            femDiscretePhi2(mySpace, xsi[i], eta[i], phi);
+            femDiscreteDphi2(mySpace, xsi[i], eta[i], dphidxsi, dphideta);
+            for (j = 0; j < n; j++) {  
+                printf("(xsi=%+.1f,eta=%+.1f) : ", xsi[i], eta[i]);  
+                printf(" phi(%d)=%+.1f", j, phi[j]);
+                printf("   dphidxsi(%d)=%+.1f", j, dphidxsi[j]);
+                printf("   dphideta(%d)=%+.1f \n", j, dphideta[j]); }
+            printf(" \n"); }}   
+}
