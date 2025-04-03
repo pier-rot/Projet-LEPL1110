@@ -44,6 +44,12 @@ typedef struct {
 typedef struct {
     int n;
     femElementType type;
+    void (*x2)(double *xsi, double *eta);
+    void (*phi2)(double xsi, double eta, double *phi);
+    void (*dphi2dx)(double xsi, double eta, double *dphidxsi, double *dphideta);
+    void (*x)(double *xsi);
+    void (*phi)(double xsi, double *phi);
+    void (*dphidx)(double xsi, double *dphidxsi);
 } femDiscrete;
 
 typedef struct {
@@ -91,5 +97,6 @@ femGeo* geoInit();
 void geoFree(femGeo* geo);
 void geoPrint(femGeo* geo);
 void geoSetDomain(femGeo* geo, int iDomain, char* name);
+int geoGetDomain(femGeo* geo, char* name);
 
 #endif
