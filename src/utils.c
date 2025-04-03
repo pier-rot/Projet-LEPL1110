@@ -265,3 +265,119 @@ static const double _gaussTri3Eta[3]     = { 0.166666666666667, 0.16666666666666
 static const double _gaussTri3Weight[3]  = { 0.166666666666667, 0.166666666666667, 0.166666666666667};
 static const double _gaussEdge2Xsi[2]    = { 0.577350269189626,-0.577350269189626};
 static const double _gaussEdge2Weight[2] = { 1.000000000000000, 1.000000000000000};
+
+femIntegration* femIntegrationCreate(int n, femElementType type){
+    femIntegration* rule = (femIntegration*)malloc(sizeof(femIntegration));
+    if (rule == NULL) {
+        fprintf(stderr, "Memory allocation failed for femIntegration structure.\n");
+        return NULL;
+    }
+
+    if (type == FEM_EDGE && n == 2 ){
+        rule->n = n;
+        rule->xsi = _gaussEdge2Xsi;
+        rule->eta = NULL;
+        rule->weight = _gaussEdge2Weight;
+    } else if (type == FEM_TRIANGLE && n == 3){
+        rule->n = n;
+        rule->xsi = _gaussTri3Xsi;
+        rule->eta = _gaussTri3Eta;
+        rule->weight = _gaussTri3Weight;
+    } else if (type == FEM_QUAD && n == 4){
+        rule->n = n;
+        rule->xsi = _gaussQuad4Xsi;
+        rule->eta = _gaussQuad4Eta;
+        rule->weight = _gaussQuad4Weight;
+    } else {
+        fprintf(stderr, "Invalid integration rule for element type.\n");
+        free(rule);
+        return NULL;
+    }
+    return rule;
+}
+
+void femIntegrationFree(femIntegration* rule){
+    if (rule != NULL) {
+        free(rule);
+    }
+}
+
+// Nodes for parent edge
+void _e1c0_x(double *xsi) 
+{
+    xsi[0] = -1.0;  
+    xsi[1] =  1.0;  
+}
+
+// Basis functions for parent edge
+void _e1c0_phi(double xsi,  double *phi)
+{
+    phi[0] = (1 - xsi) / 2.0;  
+    phi[1] = (1 + xsi) / 2.0;
+}
+
+// Derivative of basis functions for parent edge
+void _e1c0_dphidx(double xsi, double *dphidxsi)
+{
+    dphidxsi[0] = -0.5;  
+    dphidxsi[1] =  0.5;
+}
+
+// Nodes for parent triangle
+void _p1c0_x(double *xsi, double *eta) 
+{
+    xsi[0] =  0.0;  eta[0] =  0.0;
+    xsi[1] =  1.0;  eta[1] =  0.0;
+    xsi[2] =  0.0;  eta[2] =  1.0;
+}
+
+// Basis functions for parent triangle
+void _p1c0_phi(double xsi, double eta, double *phi)
+{
+    phi[0] = 1 - xsi - eta;  
+    phi[1] = xsi;
+    phi[2] = eta;
+}
+
+// Derivative of basis functions for parent triangle
+void _p1c0_dphidx(double xsi, double eta, double *dphidxsi, double *dphideta)
+{
+    dphidxsi[0] = -1.0;  
+    dphidxsi[1] =  1.0;
+    dphidxsi[2] =  0.0;
+    dphideta[0] = -1.0;  
+    dphideta[1] =  0.0;
+    dphideta[2] =  1.0;
+}
+
+// Nodes for parent quad
+void _q1c0_x(double *xsi, double *eta) 
+{
+    xsi[0] =  1.0;  eta[0] =  1.0;
+    xsi[1] = -1.0;  eta[1] =  1.0;
+    xsi[2] = -1.0;  eta[2] = -1.0;
+    xsi[3] =  1.0;  eta[3] = -1.0;
+}
+
+// Basis functions for parent quad
+void _q1c0_phi(double xsi, double eta, double *phi)
+{
+    phi[0] = (1.0 + xsi) * (1.0 + eta) / 4.0;  
+    phi[1] = (1.0 - xsi) * (1.0 + eta) / 4.0;
+    phi[2] = (1.0 - xsi) * (1.0 - eta) / 4.0;
+    phi[3] = (1.0 + xsi) * (1.0 - eta) / 4.0;
+}
+
+// Derivative of basis functions for parent quad
+void _q1c0_dphidx(double xsi, double eta, double *dphidxsi, double *dphideta)
+{
+    dphidxsi[0] =   (1.0 + eta) / 4.0;  
+    dphidxsi[1] = - (1.0 + eta) / 4.0;
+    dphidxsi[2] = - (1.0 - eta) / 4.0;
+    dphidxsi[3] =   (1.0 - eta) / 4.0;
+    dphideta[0] =   (1.0 + xsi) / 4.0;  
+    dphideta[1] =   (1.0 - xsi) / 4.0;
+    dphideta[2] = - (1.0 - xsi) / 4.0;
+    dphideta[3] = - (1.0 + xsi) / 4.0;
+
+}
