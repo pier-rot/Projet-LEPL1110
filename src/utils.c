@@ -607,3 +607,259 @@ void femFullSystemConstrain(femFullSystem* system, int node, double value){
     A[node][node] = 1.0;
     B[node] = value;
 }
+
+// Linear elasticity functions
+femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase) {
+    femProblem* problem = (femProblem*)malloc(sizeof(femProblem));
+    if (problem == NULL) {
+        fprintf(stderr, "Memory allocation failed for femProblem structure.\n");
+        return NULL;
+    }
+
+    problem->E = E;
+    problem->nu = nu;
+    problem->rho = rho;
+    problem->g = g;
+    problem->T = T;
+
+    if (iCase == PLANAR_STRESS){
+        problem->A = E / (1 - nu * nu);
+        problem->B = nu * E / (1 - nu * nu);
+        problem->C = E / (2 * (1 + nu));
+    } else if (iCase == PLANAR_STRAIN){
+        problem->A = E / ((1 + nu) * (1 - 2 * nu));
+        problem->B = nu * E / ((1 + nu) * (1 - 2 * nu));
+        problem->C = E / (2 * (1 + nu));
+    } else {
+        fprintf(stderr, "Invalid case for linear elasticity.\n");
+        free(problem);
+        return NULL;
+    }
+
+    problem->planarStrainStress = iCase;
+    problem->nBoundaryConditions = 0;
+    problem->conditions = NULL;
+    int size = 2 * geo->nodes->nNodes;
+    
+    problem->constrainedNodes = (int*)malloc(size * sizeof(int));
+    if (problem->constrainedNodes == NULL) {
+        fprintf(stderr, "Memory allocation failed for constrained nodes.\n");
+        free(problem);
+        return NULL;
+    }
+
+    problem->soluce = (double*)malloc(size * sizeof(double));
+    if (problem->soluce == NULL) {
+        fprintf(stderr, "Memory allocation failed for solution vector.\n");
+        free(problem->constrainedNodes);
+        free(problem);
+        return NULL;
+    }
+
+    problem->residuals = (double*)malloc(size * sizeof(double));
+    if (problem->residuals == NULL) {
+        fprintf(stderr, "Memory allocation failed for residuals vector.\n");
+        free(problem->soluce);
+        free(problem->constrainedNodes);
+        free(problem);
+        return NULL;
+    }
+
+    for(int i = 0; i<size; i++){
+        problem->constrainedNodes[i] = -1.0;
+        problem->soluce[i] = 0.0;
+        problem->residuals[i] = 0.0;
+    }
+
+    problem->geometry = geo;
+    if (geo->mesh->nLocalNode == 3) {
+        problem->space = femDiscreteCreate(3, FEM_TRIANGLE);
+        problem->rule = femIntegrationCreate(3, FEM_TRIANGLE);
+    } else if (geo->mesh->nLocalNode == 4) {
+        problem->space = femDiscreteCreate(4, FEM_QUAD);
+        problem->rule = femIntegrationCreate(4, FEM_QUAD);
+    }
+    problem->spaceEdge = femDiscreteCreate(2, FEM_EDGE);
+    problem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
+    problem->system = femFullSystemCreate(size);
+
+    printf("Discrete space for the mesh:\n");
+    femDiscretePrint(problem->space);
+    printf("Discrete space for the edges:\n");
+    femDiscretePrint(problem->spaceEdge);
+
+    return problem;
+}
+
+void femElasticityPrint(femProblem* problem) {
+    printf("\n\n ======================================================================================= \n\n");
+    printf(" Linear elasticity problem \n");
+    printf("   Young modulus   E   = %14.7e [N/m2]\n",problem->E);
+    printf("   Poisson's ratio nu  = %14.7e [-]\n",problem->nu);
+    printf("   Density         rho = %14.7e [kg/m3]\n",problem->rho);
+    printf("   Gravity         g   = %14.7e [m/s2]\n",problem->g);
+    printf("   String tension  T   = %14.7e [N/m2]\n",problem->T);
+    
+    if (problem->planarStrainStress == PLANAR_STRAIN)  printf("   Planar strains formulation \n");
+    if (problem->planarStrainStress == PLANAR_STRESS)  printf("   Planar stresses formulation \n");
+    if (problem->planarStrainStress == AXISYM)         printf("   Axisymmetric formulation \n");
+
+    printf("   Boundary conditions : \n");
+    for(int i=0; i < problem->nBoundaryConditions; i++) {
+          femBoundaryCondition *theCondition = problem->conditions[i];
+          double value = theCondition->value;
+          printf("  %20s :",theCondition->domain->name);
+          if (theCondition->type==DIRICHLET_X)  printf(" imposing %9.2e as the horizontal displacement  \n",value);
+          if (theCondition->type==DIRICHLET_Y)  printf(" imposing %9.2e as the vertical displacement  \n",value); 
+          if (theCondition->type==NEUMANN_X)    printf(" imposing %9.2e as the horizontal force desnity \n",value); 
+          if (theCondition->type==NEUMANN_Y)    printf(" imposing %9.2e as the vertical force density \n",value);}
+    printf(" ======================================================================================= \n\n");
+
+}
+
+void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBoundaryType type, double value){
+    int iDomain = geoGetDomain(problem->geometry, name);
+    if (iDomain == -1) {
+        fprintf(stderr, "Domain not found: %s\n", name);
+        return;
+    }
+
+    femBoundaryCondition* condition = (femBoundaryCondition*)malloc(sizeof(femBoundaryCondition));
+    condition->domain = problem->geometry->domains[iDomain];
+    condition->type = type;
+    condition->value = value;
+    problem->nBoundaryConditions++;
+
+    int size = problem->nBoundaryConditions;
+    if (problem->conditions == NULL) {
+        problem->conditions = (femBoundaryCondition**)malloc(size * sizeof(femBoundaryCondition*));
+    } else {
+        problem->conditions = (femBoundaryCondition**)realloc(problem->conditions, size * sizeof(femBoundaryCondition*));
+    }
+    if (problem->conditions == NULL) {
+        fprintf(stderr, "Memory allocation failed for boundary conditions.\n");
+        free(condition);
+        return;
+    }
+    problem->conditions[size - 1] = condition;
+
+    int shift=-1;
+    if (type == DIRICHLET_X) shift = 0;
+    if (type == DIRICHLET_Y) shift = 1;
+    if (shift == -1) return;
+
+    int* elem = condition->domain->elem;
+    int nElem = condition->domain->nElem;
+    for (int e = 0; e < nElem; e++){
+        for (int i = 0; i < 2; i++){
+            int node = condition->domain->mesh->elem[2*elem[e] + i];
+            problem->constrainedNodes[2*node + shift] = size - 1;
+        }
+    }
+}
+
+// TODO
+void femElasticityAssembleElements(femProblem* problem){
+
+}
+
+// TODO
+void femElasticityAssembleNeumann(femProblem* problem){
+
+}
+
+// TODO
+double* femElasticitySolve(femProblem* problem){
+
+}
+
+// TODO
+double* femElasticityForces(femProblem* problem){
+
+}
+
+void femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y)){
+    femIntegration* rule = problem->rule;
+    femGeo* geo = problem->geometry;
+    femNodes* nodes = geo->nodes;
+    femMesh* mesh = geo->mesh;
+    femDiscrete* space = problem->space;
+
+    double x[4], y[4], phi[4], dphidxsi[4], dphideta[4], dphidx[4], dphidy[4];
+    int iElem, iInteg, i, map[4];
+    int nLocal = mesh->nLocalNode;
+    double value = 0.0;
+
+    for (iElem = 0; iElem < mesh->nElem; iElem++) {
+        for (i = 0; i < nLocal; i++){
+            map[i] = mesh->elem[iElem * nLocal + i];
+            x[i] = nodes->X[map[i]];
+            y[i] = nodes->Y[map[i]];
+        }
+
+        for (iInteg = 0; iInteg < rule->n; iInteg++){
+            double xsi = rule->xsi[iInteg];
+            double eta = rule->eta[iInteg];
+            double weight = rule->weight[iInteg];
+
+            // Compute the shape functions and their derivatives
+            femDiscretePhi2(space, xsi, eta, phi);
+            femDiscreteDphi2(space, xsi, eta, dphidxsi, dphideta);
+
+            double dxdxsi = 0.0;
+            double dxdeta = 0.0;
+            double dydxsi = 0.0;
+            double dydeta = 0.0;
+            for (i = 0; i < space->n; i++){
+                dxdxsi += x[i] * dphidxsi[i];
+                dxdeta += x[i] * dphideta[i];
+                dydxsi += y[i] * dphidxsi[i];
+                dydeta += y[i] * dphideta[i];
+            }
+            double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
+            for (i = 0; i < space->n; i++){
+                value+= phi[i] * f(x[i], y[i]) * jac * weight;
+            }
+        }
+    }
+    return value;
+}
+
+void femElasticityFree(femProblem* problem){
+    if (problem != NULL){
+        if (problem->geometry != NULL) {
+            geoFree(problem->geometry);
+        }
+        if (problem->space != NULL) {
+            femDiscreteFree(problem->space);
+        }
+        if (problem->rule != NULL) {
+            femIntegrationFree(problem->rule);
+        }
+        if (problem->spaceEdge != NULL) {
+            femDiscreteFree(problem->spaceEdge);
+        }
+        if (problem->ruleEdge != NULL) {
+            femIntegrationFree(problem->ruleEdge);
+        }
+        if (problem->system != NULL) {
+            femFullSystemFree(problem->system);
+        }
+        if (problem->constrainedNodes != NULL) {
+            free(problem->constrainedNodes);
+        }
+        if (problem->soluce != NULL) {
+            free(problem->soluce);
+        }
+        if (problem->residuals != NULL) {
+            free(problem->residuals);
+        }
+        if (problem->conditions != NULL) {
+            for(int i = 0; i < problem->nBoundaryConditions; i++){
+                free(problem->conditions[i]);
+            }
+            free(problem->conditions);
+        }
+        free(problem);
+    }
+}
