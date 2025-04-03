@@ -14,18 +14,6 @@ femGeo* geoInit() {
         return NULL;
     }
 
-    // if (elementType == FEM_TRIANGLE){
-    //     geo->nodes->nNodes = 3;
-    // } else if (elementType == FEM_QUAD){
-    //     geo->nodes->nNodes = 4;
-    // } else if (elementType == FEM_EDGE){
-    //     geo->nodes->nNodes = 2;
-    // } else {
-    //     fprintf(stderr, "Invalid element type.\n");
-    //     free(geo->nodes);
-    //     free(geo);
-    //     return NULL;
-    // }
 
     geo->mesh = (femMesh*)malloc(sizeof(femMesh));
     if (geo->mesh == NULL) {
@@ -244,4 +232,27 @@ void geoPrint(femGeo* geo){
         }
         printf("\n");
     }
+}
+
+int geoGetDomain(femGeo* geo, char* name){
+    int index = -1;
+    int nDomains = geo->nDomains;
+    for (int i = 0; i < nDomains; i++) {
+        if (strcmp(geo->domains[i]->name, name) == 0) {
+            index = i;
+        }
+    }
+    return index;
+}
+
+void geoSetDomain(femGeo* geo, int iDomain, char* name){
+    if (iDomain < 0 || iDomain >= geo->nDomains) {
+        fprintf(stderr, "Invalid domain index: %d\n", iDomain);
+        return;
+    }
+    if (geoGetDomain(geo, name) != -1) {
+        fprintf(stderr, "Domain name already exists: %s\n", name);
+        return;
+    }
+    sprintf(geo->domains[iDomain]->name, "%s", name);
 }
