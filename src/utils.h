@@ -72,7 +72,7 @@ typedef struct {
 } femBoundaryCondition;
 
 typedef struct {
-    double E,nu,rho,g;
+    double E,nu,rho,g,T;
     double A,B,C;
     int planarStrainStress;
     int nBoundaryConditions;
@@ -123,5 +123,16 @@ void femFullSystemFree(femFullSystem* system);
 void femFullSystemPrint(femFullSystem* system);
 double* femFullSystemEliminate(femFullSystem* system);
 void femFullSystemConstrain(femFullSystem* system, int node, double value);
+
+// Linear elasticity functions
+femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase);
+void femElasticityPrint(femProblem* problem);
+void femElasticityAddBoundaryCondition(femProblem* problem, int iDomain, femBoundaryType type, double value);
+void femElasticityAssembleElements(femProblem* problem);
+void femElasticityAssembleNeumann(femProblem* problem);
+void femElasticitySolve(femProblem* problem);
+void femElasticityForces(femProblem* problem);
+void femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y));
+void femElasticityFree(femProblem* problem);
 
 #endif
