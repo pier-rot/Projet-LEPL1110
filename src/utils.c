@@ -778,7 +778,7 @@ double* femElasticityForces(femProblem* problem){
 
 }
 
-void femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y)){
+double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y)){
     femIntegration* rule = problem->rule;
     femGeo* geo = problem->geometry;
     femNodes* nodes = geo->nodes;

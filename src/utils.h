@@ -132,7 +132,7 @@ void femElasticityAssembleElements(femProblem* problem);
 void femElasticityAssembleNeumann(femProblem* problem);
 double* femElasticitySolve(femProblem* problem);
 double* femElasticityForces(femProblem* problem);
-void femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y));
+double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y));
 void femElasticityFree(femProblem* problem);
 
 #endif
