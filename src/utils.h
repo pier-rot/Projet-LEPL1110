@@ -139,11 +139,13 @@ double* femFullSystemEliminate(femFullSystem* system);
 void femFullSystemConstrain(femFullSystem* system, int node, double value);
 
 // Band system functions
-void femBandSystemAlloc(femBandSystem* system, int band);
-void femBandSystemInit(femBandSystem* system);
-femBandSystem* femBandSystemCreate(int band);
+void femBandSystemAlloc(femBandSystem* system, int size, int band);
+void femBandSystemInit(femBandSystem* system, int size);
+femBandSystem* femBandSystemCreate(int band, int size);
 void femBandSystemFree(femBandSystem* system);
-void femBandSystemPrint(femBandSystem* system);
+void femBandSystemPrint(femBandSystem* system, int size);
+void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX, int* mapY, 
+                          double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
 void femBandSystemEliminate(femBandSystem* system);
 void femBandSystemConstrain(femBandSystem* system, int node, double value, int size);
 
