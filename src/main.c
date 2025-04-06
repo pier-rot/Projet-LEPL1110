@@ -61,5 +61,6 @@ int main(int argc, char const *argv[])
     // femElasticityFullPrint(problem);
     geoFree(geo);
     // femFree(problem);
+    exit(EXIT_SUCCESS);
     return 0;
 }
