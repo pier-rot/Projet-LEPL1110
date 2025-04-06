@@ -34,14 +34,33 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
+    // FEM parameters
+    femElementType elementType = FEM_TRIANGLE; // FEM_TRIANGLE or FEM_QUAD
+    femElasticCase iCase = PLANAR_STRESS;  // PLANAR_STRESS or PLANAR_STRAIN or AXISYM
+    femSolverType solverType = SOLVER_FULL; // SOLVER_FULL or SOLVER_BAND or SOLVER_GC
+    femRenumberType renumberType = NONE; // NONE or X or Y or RCMK
+
     // Initialize the femGeo structure
     femGeo* geo = geoRead(meshfile);
     if (geo == NULL) {
         fprintf(stderr, "Failed to initialize femGeo structure.\n");
         return 1;
     }
+    
 
-    geoPrint(geo);
 
+
+    femProblem* problem = femElasticityCreate(geo, 210e9, 0.3, 7800, 0, 100, PLANAR_STRESS);
+    if (problem == NULL) {
+        fprintf(stderr, "Failed to initialize femProblem structure.\n");
+        geoFree(geo);
+        return 1;
+    }
+    
+    femElasticityAddBoundaryCondition(problem, "Domain1", DIRICHLET_X, 0.0);
+
+    // femElasticityPrint(problem);
+    geoFree(geo);
+    problemFree(problem);
     return 0;
 }
