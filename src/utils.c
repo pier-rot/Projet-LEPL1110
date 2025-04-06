@@ -93,6 +93,7 @@ femGeo* geoRead(const char* filename){
     fscanf(file, "Number of nodes %d\n", &nodes->nNodes);
     nodes->X = (double*)malloc(nodes->nNodes * sizeof(double));
     nodes->Y = (double*)malloc(nodes->nNodes * sizeof(double));
+    nodes->number = (int*)malloc(nodes->nNodes * sizeof(int));
     
     // Err check for memory allocation
     if (nodes->X == NULL || nodes->Y == NULL) {
@@ -182,6 +183,7 @@ femGeo* geoRead(const char* filename){
             geoFree(geo);
             return NULL;
         }
+        geo->domains[iDomain]->mesh = edges;
         int iTemp;
         // Read the domain information
         fscanf(file, "  Domain : %6d \n", &iTemp);
@@ -289,7 +291,7 @@ void femMeshRenumber(femMesh *theMesh, femRenumberType renumType)
             //TODO
             break;
         default:
-            Error("Unexpected renumbering option");
+            fprintf(stderr,"Unknown renumbering type\n");
     }
                 
     for (i = 0; i < theMesh->nodes->nNodes; i++){
@@ -779,10 +781,10 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     problem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
     problem->system = femFullSystemCreate(size);
 
-    printf("Discrete space for the mesh:\n");
-    femDiscretePrint(problem->space);
-    printf("Discrete space for the edges:\n");
-    femDiscretePrint(problem->spaceEdge);
+    // printf("Discrete space for the mesh:\n");
+    // femDiscretePrint(problem->space);
+    // printf("Discrete space for the edges:\n");
+    // femDiscretePrint(problem->spaceEdge);
 
     return problem;
 }
