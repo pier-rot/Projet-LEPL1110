@@ -5,7 +5,7 @@ set(EXEC_NAME bow)
 
 # link the aforementioned libraries
 add_executable(${EXEC_NAME} src/main.c src/utils.c)
-target_link_libraries(${EXEC_NAME} -lm ${OPENGL_gl_LIBRARY})
+target_link_libraries(${EXEC_NAME} -lm)
 
 if(APPLE)
     target_compile_options(${EXEC_NAME} PRIVATE "-Wdeprecated-declarations")
