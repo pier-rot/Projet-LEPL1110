@@ -98,6 +98,7 @@ typedef struct {
     double* soluce;
     double* residuals;
 
+    femRenumberType renumberType;
     femSolverType solverType;
     femGeo* geometry;
     femDiscrete* space;
@@ -112,6 +113,7 @@ femGeo* geoRead(const char *filename);
 femGeo* geoInit();
 void geoFree(femGeo* geo);
 void geoPrint(femGeo* geo);
+void geoNodesPrint(femGeo* geo);
 void geoSetDomain(femGeo* geo, int iDomain, char* name);
 int geoGetDomain(femGeo* geo, char* name);
 void femMeshRenumber(femMesh* mesh, femRenumberType type);
@@ -170,7 +172,9 @@ double* femSolverEliminate(femSolver* solver);
 
 // Linear elasticity functions
 femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase);
+femProblem* femElasticityRead(femGeo* geo, const char*, femSolverType solverType, femRenumberType renumberType);
 void femElasticityPrint(femProblem* problem);
+void femElasticityFullPrint(femProblem* problem);
 void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBoundaryType type, double value);
 void femElasticityAssembleElements(femProblem* problem);
 void femElasticityAssembleNeumann(femProblem* problem);

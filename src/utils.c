@@ -88,6 +88,7 @@ femGeo* geoRead(const char* filename){
     femNodes* nodes = geo->nodes;
     femMesh* mesh = geo->mesh;
     femMesh* edges = geo->edges;
+    geo->mesh->nodes = nodes;
 
     // Read the number of nodes
     fscanf(file, "Number of nodes %d\n", &nodes->nNodes);
@@ -187,7 +188,7 @@ femGeo* geoRead(const char* filename){
         int iTemp;
         // Read the domain information
         fscanf(file, "  Domain : %6d \n", &iTemp);
-        fscanf(file, "  Name : %s %6d\n", geo->domains[iDomain]->name, &iTemp);
+        fscanf(file, "  Name : %[^\n]s \n", geo->domains[iDomain]->name);
         fscanf(file, "  Number of elements : %6d\n", &geo->domains[iDomain]->nElem);
         geo->domains[iDomain]->elem = (int*)malloc(geo->domains[iDomain]->nElem * sizeof(int));
         for(int i = 0; i < geo->domains[iDomain]->nElem; i++) {
@@ -234,6 +235,16 @@ void geoPrint(femGeo* geo){
         }
         printf("\n");
     }
+}
+
+void geoNodesPrint(femGeo* geo){
+    femNodes* nodes = geo->nodes;
+    if(nodes){
+        printf("Nodes: %d\n", nodes->nNodes);
+        for(int i = 0; i < nodes->nNodes; i++){
+            printf("%6d : %6d : %le %le\n", i, nodes->number[i], nodes->X[i], nodes->Y[i]);
+        }
+    }  
 }
 
 int geoGetDomain(femGeo* geo, char* name){
@@ -789,6 +800,71 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     return problem;
 }
 
+femProblem* femElasticityRead(femGeo* geo, const char* problemPath, femSolverType solverType, femRenumberType renumberType){
+    FILE* file = fopen(problemPath, "r");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file: %s\n", problemPath);
+        return NULL;
+    }
+
+    femElasticCase iCase;
+    double E, nu, rho, g, T;
+
+    fscanf(file, "Problem type    : %u\n", &iCase);
+    fscanf(file, "E : %le\n", &E);
+    fscanf(file, "nu : %le\n", &nu);
+    fscanf(file, "rho : %le\n", &rho);
+    fscanf(file, "g : %le\n", &g);
+    fscanf(file, "T : %le\n", &T);
+
+    femProblem* problem = femElasticityCreate(geo, E, nu, rho, g, T, iCase);
+    int nCond;
+    fscanf(file, "Conditions : %d\n", &nCond);
+    for (int i = 0; i < nCond; i++){
+        char* condType = (char*)malloc(16 * sizeof(char));
+        char* domainName = (char*)malloc(MAXNAME * sizeof(char));
+        double value;
+        fscanf(file, "Type : %s\n", condType);
+        fscanf(file, "Domaine : %s\n", domainName);
+        if(geoGetDomain(geo, domainName) == -1){
+            fprintf(stderr, "Domain not found: %s\n", domainName);
+            free(condType);
+            free(domainName);
+            break;
+        }
+        fscanf(file, "Valeur : %le\n", &value);
+        if (strcmp(condType, "DIRICHLET_X") == 0) {
+            femElasticityAddBoundaryCondition(problem, domainName, DIRICHLET_X, value);
+        } else if (strcmp(condType, "DIRICHLET_Y") == 0) {
+            femElasticityAddBoundaryCondition(problem, domainName, DIRICHLET_Y, value);
+        } else if (strcmp(condType, "NEUMANN_X") == 0) {
+            femElasticityAddBoundaryCondition(problem, domainName, NEUMANN_X, value);
+        } else if (strcmp(condType, "NEUMANN_Y") == 0) {
+            femElasticityAddBoundaryCondition(problem, domainName, NEUMANN_Y, value);
+        } else {
+            fprintf(stderr, "Unknown condition type: %s\n", condType);
+        }
+        free(condType);
+        free(domainName);
+    }
+    problem->solverType = solverType;
+    problem->renumberType = renumberType;
+    problem->planarStrainStress = iCase;
+
+    if (geo->mesh->nLocalNode == 3) {
+        problem->space = femDiscreteCreate(3, FEM_TRIANGLE);
+        problem->rule = femIntegrationCreate(3, FEM_TRIANGLE);
+    } else if (geo->mesh->nLocalNode == 4) {
+        problem->space = femDiscreteCreate(4, FEM_QUAD);
+        problem->rule = femIntegrationCreate(4, FEM_QUAD);
+    }
+    problem->spaceEdge = femDiscreteCreate(2, FEM_EDGE);
+    problem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
+
+    fclose(file);
+    return problem;
+}
+
 void femElasticityPrint(femProblem* problem) {
     printf("\n\n ======================================================================================= \n\n");
     printf(" Linear elasticity problem \n");
@@ -809,10 +885,31 @@ void femElasticityPrint(femProblem* problem) {
           printf("  %20s :",theCondition->domain->name);
           if (theCondition->type==DIRICHLET_X)  printf(" imposing %9.2e as the horizontal displacement  \n",value);
           if (theCondition->type==DIRICHLET_Y)  printf(" imposing %9.2e as the vertical displacement  \n",value); 
-          if (theCondition->type==NEUMANN_X)    printf(" imposing %9.2e as the horizontal force desnity \n",value); 
+          if (theCondition->type==NEUMANN_X)    printf(" imposing %9.2e as the horizontal force density \n",value); 
           if (theCondition->type==NEUMANN_Y)    printf(" imposing %9.2e as the vertical force density \n",value);}
     printf(" ======================================================================================= \n\n");
 
+}
+
+void femElasticityFullPrint(femProblem* problem){
+    printf("\n\n");
+    printf("Physical param : E = %le, nu = %le, rho = %le, g = %le, T = %le\n", problem->E, problem->nu, problem->rho, problem->g, problem->T);
+    printf("A = %le, B = %le, C = %le\n", problem->A, problem->B, problem->C);
+    printf("planarStrainStress = %d\n", problem->planarStrainStress);
+    printf("nBoundaryConditions = %d\n", problem->nBoundaryConditions);
+    for (int i = 0; i < problem->nBoundaryConditions; i++) {
+        femBoundaryCondition* condition = problem->conditions[i];
+        printf("Condition %d: domain = %s, type = %d, value = %le\n", i, condition->domain->name, condition->type, condition->value);
+    }
+    printf("Constrained Nodes :\n");
+    for (int i=0; i<problem->geometry->nodes->nNodes; i++) {
+        if (problem->constrainedNodes[2*i+0] != -1) {
+            printf("  %d : %d \n",i,problem->constrainedNodes[2*i+0]); }
+        if (problem->constrainedNodes[2*i+1] != -1) {
+            printf("  %d : %d \n",i,problem->constrainedNodes[2*i+1]); } }
+    printf("RenumberType = %d\n", problem->renumberType);
+    printf("SolverType = %d\n", problem->solverType);
+    // geoPrint(problem->geometry);
 }
 
 void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBoundaryType type, double value){
