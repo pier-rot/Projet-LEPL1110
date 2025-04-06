@@ -74,6 +74,12 @@ typedef struct {
 } femBandSystem;
 
 typedef struct {
+    femSolverType type;
+    void* solver;
+    int size;
+} femSolver;
+
+typedef struct {
     femDomain* domain;
     femBoundaryType type; 
     double value;
@@ -91,7 +97,7 @@ typedef struct {
     double* soluce;
     double* residuals;
 
-
+    femSolverType solverType;
     femGeo* geometry;
     femDiscrete* space;
     femIntegration* rule;
