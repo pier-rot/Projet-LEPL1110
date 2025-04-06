@@ -8,6 +8,11 @@ cd Projet-LEPL1110
 cmake CMakeLists.txt
 make
 ```
+```powershell
+cd build
+.\bow.exe ..\data\mesh.txt ..\data\problem.txt
+```
+
 Par défaut, les fichiers `data.txt` et `problem.txt` dans le dossier `data` sont utilisés.
 
 (Optionnel) On peut ensuite passer 2 chemins en arguments :
