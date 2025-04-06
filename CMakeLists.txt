@@ -1,10 +1,20 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.31.5)
 project(bowProject)
 
 set(EXEC_NAME bow)
 
+# OpenGL
+find_package(OpenGL REQUIRED)
+include_directories(${OPENGL_INCLUDE_DIR})
+
+# GLFW
+add_subdirectory(glfw)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glfw/include)
+
+
+
 # link the aforementioned libraries
-add_executable(${EXEC_NAME} src/main.c src/utils.c)
+add_executable(${EXEC_NAME} src/main.c src/utils.c src/glfem.c src/geomesh.c)
 target_link_libraries(${EXEC_NAME} -lm ${OPENGL_gl_LIBRARY})
 
 if(APPLE)
