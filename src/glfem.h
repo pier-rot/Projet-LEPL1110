@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 //#include "fem.h"
+#include "utils.h"
 
 
 void        glfemDrawColorElement(float *x, float *y, double *u, int n);
