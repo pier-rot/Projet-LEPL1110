@@ -56,7 +56,7 @@ int main(int argc, char const *argv[])
     meshSizeField[i] = geoSize(theNodes->X[i], theNodes->Y[i]);
     double hMin = femMin(meshSizeField,theNodes->nNodes);  
     double hMax = femMax(meshSizeField,theNodes->nNodes);  
-    printf(" ==== Global requested h : %14.7e \n",geo->h);
+    //printf(" ==== Global requested h : %14.7e \n",geo->h);
     printf(" ==== Minimum h          : %14.7e \n",hMin);
     printf(" ==== Maximum h          : %14.7e \n",hMax);
 
@@ -97,7 +97,7 @@ int main(int argc, char const *argv[])
         if (mode == 0) {
             domain = domain % geo->nDomains;
             glfemPlotDomain( geo->domains[domain]);         
-            sprintf(theMessage, "%s : %d ",geo->domain[domain]->name,domain);
+            sprintf(theMessage, "%s : %d ",geo->domains[domain]->name,domain);
             glColor3f(1.0,0.0,0.0); glfemMessage(theMessage);
         }
             
@@ -108,7 +108,7 @@ int main(int argc, char const *argv[])
     // Check if the ESC key was pressed or the window was closed
 
     free(meshSizeField);  
-    geoFinalize();
+    //geoFinalize();
     glfwTerminate(); 
 
     //*/
