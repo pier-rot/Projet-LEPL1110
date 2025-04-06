@@ -257,6 +257,47 @@ void geoSetDomain(femGeo* geo, int iDomain, char* name){
     sprintf(geo->domains[iDomain]->name, "%s", name);
 }
 
+double* pos;
+int compare(const void *N1, const void *N2)
+{
+    int* i1 = (int*)N1;
+    int* i2 = (int*)N2;
+    double diff = pos[*i1] - pos[*i2];
+    return (diff < 0) - (diff > 0);
+}
+
+void femMeshRenumber(femMesh *theMesh, femRenumberType renumType)
+{
+    int i, *inverse;
+    inverse = (int *) malloc(sizeof(int) * theMesh->nodes->nNodes);
+    for (i = 0; i < theMesh->nodes->nNodes; i++){
+                inverse[i] = i;
+    }
+
+    switch (renumType) {
+        case NONE :
+            break;
+        case X :
+            pos = theMesh->nodes->X;
+            qsort(inverse, theMesh->nodes->nNodes, sizeof(int), compare);
+            break;
+        case Y :
+            pos = theMesh->nodes->Y;
+            qsort(inverse, theMesh->nodes->nNodes, sizeof(int), compare);
+            break;
+        case RCMK :
+            //TODO
+            break;
+        default:
+            Error("Unexpected renumbering option");
+    }
+                
+    for (i = 0; i < theMesh->nodes->nNodes; i++){
+        theMesh->nodes->number[inverse[i]] = i;
+    }
+    free(inverse);
+}
+
 static const double _gaussQuad4Xsi[4]    = {-0.577350269189626,-0.577350269189626, 0.577350269189626, 0.577350269189626};
 static const double _gaussQuad4Eta[4]    = { 0.577350269189626,-0.577350269189626,-0.577350269189626, 0.577350269189626};
 static const double _gaussQuad4Weight[4] = { 1.000000000000000, 1.000000000000000, 1.000000000000000, 1.000000000000000};

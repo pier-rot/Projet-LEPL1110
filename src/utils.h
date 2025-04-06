@@ -18,6 +18,7 @@ typedef struct {
     int nNodes;
     double* X;
     double* Y;
+    int* number;
 } femNodes;
 
 typedef struct {
@@ -113,6 +114,8 @@ void geoFree(femGeo* geo);
 void geoPrint(femGeo* geo);
 void geoSetDomain(femGeo* geo, int iDomain, char* name);
 int geoGetDomain(femGeo* geo, char* name);
+void femMeshRenumber(femMesh* mesh, femRenumberType type);
+int compare(const void *N1, const void *N2);
 
 // Integration functions
 femIntegration* femIntegrationCreate(int n, femElementType type);
