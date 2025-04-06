@@ -87,13 +87,16 @@ int main(int argc, char const *argv[])
         if (glfwGetKey(window,'N') == GLFW_PRESS && freezingButton == FALSE) { domain++; freezingButton = TRUE; told = t;}
         
         if (t-told > 0.5) { freezingButton = FALSE; }
-            
+        
+        /*
         if (mode == 1) {
             glfemPlotField(geo->edges, meshSizeField);
             glfemPlotMesh(geo->edges); 
             sprintf(theMessage, "Number of elements : %d ",geo->edges->nElem);        
             glColor3f(1.0,0.0,0.0); glfemMessage(theMessage); 
         }
+        */
+       
         if (mode == 0) {
             domain = domain % geo->nDomains;
             glfemPlotDomain( geo->domains[domain]);         
