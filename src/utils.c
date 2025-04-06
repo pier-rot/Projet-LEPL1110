@@ -458,7 +458,6 @@ void femDiscreteDphi(femDiscrete* mySpace, double xsi, double *dphidxsi)
     mySpace->dphidx(xsi,dphidxsi);
 }
 
-// Print the discrete space
 void femDiscretePrint(femDiscrete *mySpace)
 {
     int i,j;
@@ -489,6 +488,7 @@ void femDiscretePrint(femDiscrete *mySpace)
             printf(" \n"); }}   
 }
 
+// Full system functions
 void femFullSystemAlloc(femFullSystem* system, int size){
     int i;
     double* elem = (double*) malloc(sizeof(double) * size * (size +1));
@@ -608,6 +608,61 @@ void femFullSystemConstrain(femFullSystem* system, int node, double value){
     B[node] = value;
 }
 
+// Band system functions
+femBandSystem* femBandSystemCreate(int band, int size){
+    femBandSystem* system = (femBandSystem*) malloc(sizeof(femBandSystem));
+    if (system == NULL) {
+        fprintf(stderr, "Memory allocation failed for femBandSystem structure.\n");
+        return NULL;
+    }
+    femBandSystemAlloc(system, size, band);
+    femBandSystemInit(system, size);
+    return system;
+}
+
+void femBandSystemAlloc(femBandSystem* system, int size, int band){
+    system->B = (double*) malloc(sizeof(double) * size * (band + 1));
+    if (system->B == NULL){fprintf(stderr, "Memory allocation failed for band system B.\n"); return;}
+    system->A = (double**) malloc(sizeof(double*) * size);
+    if (system->A == NULL){fprintf(stderr, "Memory allocation failed for band system A.\n"); return;}
+    system->band = band;
+    system->A[0] = system->B + size;
+    for (int i = 1; i < size; i++){system->A[i] = system->A[i-1] + band - 1;}
+
+}
+
+void femBandSystemInit(femBandSystem* system, int size){
+    int i;
+    for (i = 0; i < size*(system->band + 1); i++){
+        system->B[i] = 0.0;
+    }
+}
+
+void femBandSystemFree(femBandSystem* system){
+    if (system != NULL) {
+        free(system->A);
+        free(system->B);
+        free(system);
+    }
+}
+
+void femBandSystemPrint(femBandSystem* system, int size){
+    double** A = system->A;
+    double* B = system->B;
+    int band = system->band;
+    for (int i = 0; i < size;i++){
+        for (int j = 0; j < band; j++){
+            if (A[i][j] == 0) printf("         ");
+            else printf("%+.2f ", A[i][j]);
+        }
+        printf(" : %+.1e \n", B[i]);
+    }
+}
+
+void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX, int* mapY, double* phi,
+                            double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc){
+    
+}
 // Linear elasticity functions
 femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase) {
     femProblem* problem = (femProblem*)malloc(sizeof(femProblem));
@@ -760,17 +815,148 @@ void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBound
 
 // TODO
 void femElasticityAssembleElements(femProblem* problem){
+    femFullSystem* system = problem->system;
+    femDiscrete* space = problem->space;
+    femIntegration* rule = problem->rule;
+    femGeo* geo = problem->geometry;
+    femNodes* nodes = geo->nodes;
+    femMesh* edges = geo->edges;
+    femMesh* mesh = geo->mesh;
+    
 
+    double x[4], y[4], phi[4], dphidxsi[4], dphideta[4], dphidx[4], dphidy[4];
+    int iElem, iInteg, iEdge, i, j, d, map[4], mapX[4], mapY[4];
+    int nLocal = mesh->nLocalNode;
+    double a = problem->A;
+    double b = problem->B;
+    double c = problem->C;
+    double rho = problem->rho;
+    double g = problem->g;
+    // double T = problem->T;
+    double** A = system->A;
+    double* B = system->B;
+
+    for (iElem = 0; iElem < mesh->nElem; iElem++){
+        for (j = 0; j < nLocal; j++){
+            map[j] = mesh->elem[iElem * nLocal + j];
+            mapX[j] = 2 * map[j];
+            mapY[j] = 2 * map[j] + 1;
+            x[j] = nodes->X[map[j]];
+            y[j] = nodes->Y[map[j]];
+        }
+
+        for (iInteg = 0; iInteg < rule->n; iInteg++){
+            double xsi = rule->xsi[iInteg];
+            double eta = rule->eta[iInteg];
+            double weight = rule->weight[iInteg];
+
+            // Compute the shape functions and their derivatives
+            femDiscretePhi2(space, xsi, eta, phi);
+            femDiscreteDphi2(space, xsi, eta, dphidxsi, dphideta);
+
+            double dxdxsi = 0.0;
+            double dxdeta = 0.0;
+            double dydxsi = 0.0;
+            double dydeta = 0.0;
+            for (i = 0; i < space->n; i++){
+                dxdxsi += x[i] * dphidxsi[i];
+                dxdeta += x[i] * dphideta[i];
+                dydxsi += y[i] * dphidxsi[i];
+                dydeta += y[i] * dphideta[i];
+            }
+            double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
+            
+            for (i = 0; i < space->n; i++){
+                dphidx[i] = (dydeta * dphidxsi[i] - dydxsi * dphideta[i]) / jac;
+                dphidy[i] = (-dxdeta * dphidxsi[i] + dxdxsi * dphideta[i]) / jac;   
+            }
+
+            double wJac = jac * weight;
+
+            for (i = 0; i < space->n; i++){
+                for (j =0; j < space->n; j++){
+                    A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + dphidy[i]* c * dphidy[j]) * wJac;
+                    A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + dphidy[i]* c * dphidx[j]) * wJac;
+                    A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + dphidx[i]* c * dphidy[j]) * wJac;
+                    A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + dphidx[i]* c * dphidx[j]) * wJac;   
+                }
+                B[mapY[i]] -= phi[i] * rho * g * jac * weight;
+            }
+        }
+    }
 }
 
 // TODO
 void femElasticityAssembleNeumann(femProblem* problem){
+    femFullSystem* system = problem->system;
+    femIntegration* rule = problem->ruleEdge;
+    femDiscrete* space = problem->spaceEdge;
+    femGeo* geo = problem->geometry;
+    femNodes* nodes = geo->nodes;
+    femMesh* edges = geo->edges;
 
+    double  x[2], y[2], phi[2];
+    int iBnd, iInteg, iElem, iEdge, i, j, map[2], mapU[2];
+
+    int nLocal = 2;
+    double* B = system->B;
+
+    for(iBnd=0; iBnd < problem->nBoundaryConditions; iBnd++){
+        femBoundaryCondition* condition = problem->conditions[iBnd];
+        femBoundaryType type = condition->type;
+        femDomain* domain = condition->domain;
+        double value = condition->value;
+
+        if (type == DIRICHLET_X || type == DIRICHLET_Y) {
+            continue;
+        }
+        int shift = -1;
+        if (type == NEUMANN_X) shift = 0;
+        if (type == NEUMANN_Y) shift = 1;
+        if (shift == -1) continue;
+
+        for(iEdge = 0; iEdge < domain->nElem; iEdge++){
+            iElem = domain->elem[iEdge];
+
+            for (j = 0; j < nLocal; j++){
+                map[j] = edges->elem[iElem * nLocal + j];
+                mapU[j] = 2 * map[j] + shift;
+                x[j] = nodes->X[map[j]];
+                y[j] = nodes->Y[map[j]];
+            }
+
+            double dx = x[1] - x[0];
+            double dy = y[1] - y[0];
+            double length = sqrt(dx * dx + dy * dy);
+            double jac = length / 2.0;
+
+            for (iInteg = 0; iInteg < rule->n; iInteg++){
+                double xsi = rule->xsi[iInteg];
+                double weight = rule->weight[iInteg];
+
+                femDiscretePhi(space, xsi, phi);
+
+                for (i = 0; i < space->n; i++){
+                    double coeff = phi[i] * jac * weight;
+                    B[mapU[i]] += coeff * value;
+                }
+            }
+        }
+    }
 }
 
 // TODO
 double* femElasticitySolve(femProblem* problem){
+    femFullSystem* system = problem->system;
 
+    femFullSystemInit(system);
+
+    femElasticityAssembleElements(problem);
+    femElasticityAssembleNeumann(problem);
+
+    int size = system->size;
+
+    
 }
 
 // TODO
