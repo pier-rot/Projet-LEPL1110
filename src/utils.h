@@ -11,6 +11,8 @@
 typedef enum {FEM_TRIANGLE,FEM_QUAD,FEM_EDGE} femElementType;
 typedef enum {DIRICHLET_X,DIRICHLET_Y,NEUMANN_X,NEUMANN_Y} femBoundaryType;
 typedef enum {PLANAR_STRESS,PLANAR_STRAIN,AXISYM} femElasticCase;
+typedef enum {SOLVER_FULL, SOLVER_BAND, SOLVER_GC} femSolverType;
+typedef enum {NONE, X, Y, RCMK} femRenumberType;
 
 typedef struct {
     int nNodes;
@@ -64,6 +66,12 @@ typedef struct {
     double** A;
     int size;
 } femFullSystem;
+
+typedef struct {
+    double** A;
+    double* B;
+    int band;
+} femBandSystem;
 
 typedef struct {
     femDomain* domain;
