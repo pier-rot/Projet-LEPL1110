@@ -7,6 +7,8 @@
 #include <math.h>
 
 #define MAXNAME 128
+#define FALSE 0 
+#define TRUE  1
 
 typedef enum {FEM_TRIANGLE,FEM_QUAD,FEM_EDGE} femElementType;
 typedef enum {DIRICHLET_X,DIRICHLET_Y,NEUMANN_X,NEUMANN_Y} femBoundaryType;
