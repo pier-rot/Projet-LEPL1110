@@ -88,7 +88,7 @@ int main(int argc, char const *argv[])
         
         if (t-told > 0.5) { freezingButton = FALSE; }
         
-        /*
+        /* //TO DO : utiliser les bonnes structures 
         if (mode == 1) {
             glfemPlotField(geo->edges, meshSizeField);
             glfemPlotMesh(geo->edges); 
@@ -96,7 +96,7 @@ int main(int argc, char const *argv[])
             glColor3f(1.0,0.0,0.0); glfemMessage(theMessage); 
         }
         */
-       
+
         if (mode == 0) {
             domain = domain % geo->nDomains;
             glfemPlotDomain( geo->domains[domain]);         
@@ -111,7 +111,7 @@ int main(int argc, char const *argv[])
     // Check if the ESC key was pressed or the window was closed
 
     free(meshSizeField);  
-    //geoFinalize();
+    //geoFinalize(); //???TODO??
     glfwTerminate(); 
 
     //*/
