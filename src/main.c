@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "utils.h"
-//#include "glfem.h"
+#include "glfem.h"
 
 #define MAXFILENAMELENGTH 256
 
@@ -44,7 +44,7 @@ int main(int argc, char const *argv[])
 
     geoPrint(geo);
 
-    /*
+    ///*
 
     //
     //  -3- Champ de la taille de r�f�rence du maillage
@@ -53,10 +53,10 @@ int main(int argc, char const *argv[])
     double *meshSizeField = malloc(geo->nodes->nNodes*sizeof(double));
     femNodes *theNodes = geo->nodes;
     for(int i=0; i < theNodes->nNodes; ++i)
-    //meshSizeField[i] = geoSize(theNodes->X[i], theNodes->Y[i]);
-    //double hMin = femMin(meshSizeField,theNodes->nNodes);  
-    //double hMax = femMax(meshSizeField,theNodes->nNodes);  
-    //printf(" ==== Global requested h : %14.7e \n",geo->h);
+    meshSizeField[i] = geoSize(theNodes->X[i], theNodes->Y[i]);
+    double hMin = femMin(meshSizeField,theNodes->nNodes);  
+    double hMax = femMax(meshSizeField,theNodes->nNodes);  
+    printf(" ==== Global requested h : %14.7e \n",geo->h);
     printf(" ==== Minimum h          : %14.7e \n",hMin);
     printf(" ==== Maximum h          : %14.7e \n",hMax);
 
@@ -111,7 +111,7 @@ int main(int argc, char const *argv[])
     geoFinalize();
     glfwTerminate(); 
 
-    */
+    //*/
     
 
 
