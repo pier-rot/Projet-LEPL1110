@@ -11,10 +11,8 @@ include_directories(${OPENGL_INCLUDE_DIR})
 add_subdirectory(glfw)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glfw/include)
 
-
-
 # link the aforementioned libraries
-add_executable(${EXEC_NAME} src/main.c src/utils.c src/glfem.c src/geomesh.c)
+add_executable(${EXEC_NAME} src/glfem.c src/main.c src/utils.c src/geomesh.c)
 target_link_libraries(${EXEC_NAME} -lm ${OPENGL_gl_LIBRARY})
 
 if(APPLE)
