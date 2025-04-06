@@ -11,7 +11,6 @@ cd Projet-LEPL1110
 cmake CMakeLists.txt
 make
 ```
-
 Par défaut, les fichiers `data.txt` et `problem.txt` dans le dossier `data` sont utilisés.
 
 (Optionnel) On peut ensuite passer 2 chemins en arguments :
