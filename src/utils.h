@@ -92,4 +92,7 @@ void geoFree(femGeo* geo);
 void geoPrint(femGeo* geo);
 void geoSetDomain(femGeo* geo, int iDomain, char* name);
 
+double femMin(double *x, int n);
+double femMax(double *x, int n);
+
 #endif
