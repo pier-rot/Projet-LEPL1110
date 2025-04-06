@@ -129,7 +129,7 @@ void femDiscretePhi(femDiscrete* mySpace, double xsi, double *phi);
 void femDiscreteDphi(femDiscrete* mySpace, double xsi, double *dphidxsi);
 void femDiscretePrint(femDiscrete *mySpace);
 
-// System functions
+// Full system functions
 void femFullSystemAlloc(femFullSystem* system, int size);
 void femFullSystemInit(femFullSystem* system);
 femFullSystem* femFullSystemCreate(int size);
@@ -137,6 +137,31 @@ void femFullSystemFree(femFullSystem* system);
 void femFullSystemPrint(femFullSystem* system);
 double* femFullSystemEliminate(femFullSystem* system);
 void femFullSystemConstrain(femFullSystem* system, int node, double value);
+
+// Band system functions
+void femBandSystemAlloc(femBandSystem* system, int band);
+void femBandSystemInit(femBandSystem* system);
+femBandSystem* femBandSystemCreate(int band);
+void femBandSystemFree(femBandSystem* system);
+void femBandSystemPrint(femBandSystem* system);
+void femBandSystemEliminate(femBandSystem* system);
+void femBandSystemConstrain(femBandSystem* system, int node, double value, int size);
+
+// Renumbering functions
+void femRenumber(femGeo* geo, femRenumberType type);
+int femComputeBand(femGeo* geo);
+
+// Solver functions
+femSolver* femSolverCreate(int size);
+femSolver* femSolverBandCreate(int size, int band);
+femSolver* femSolverFullCreate(int size);
+void femSolverFree(femSolver* solver);
+void femSolverInit(femSolver* solver);
+void femSolverPrint(femSolver* solver);
+void femSolverAssemble(femSolver* solver, femProblem* problem, int* mapX, int* mapY, 
+                       double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
+void femSolverSystemConstrain(femSolver* solver, int node, double value);
+double* femSolverEliminate(femSolver* solver);
 
 // Linear elasticity functions
 femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase);
