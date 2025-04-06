@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #define MAXNAME 128
 
@@ -105,7 +106,7 @@ typedef struct {
     femIntegration* rule;
     femDiscrete* spaceEdge;
     femIntegration* ruleEdge;
-    femFullSystem* system;
+    femSolver* solver;
 } femProblem;
 
 // Geometry functions

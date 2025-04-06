@@ -311,6 +311,29 @@ void femMeshRenumber(femMesh *theMesh, femRenumberType renumType)
     free(inverse);
 }
 
+int femComputeBand(femGeo* geo){
+    femMesh* mesh = geo->mesh;
+
+    int iElem, j, maxNum, minNum, nodeNum, elemNum, band;
+    band = 0;
+
+    for (iElem = 0; iElem < mesh->nElem; iElem++)
+    {   
+        maxNum = INT_MIN;
+        minNum = INT_MAX;
+
+        for (j = 0; j < mesh->nLocalNode; j++)
+        {
+            elemNum = mesh->elem[iElem * mesh->nLocalNode + j];
+            nodeNum = mesh->nodes->number[elemNum];
+
+            maxNum = (nodeNum > maxNum) ? nodeNum : maxNum;
+            minNum = (nodeNum < minNum) ? nodeNum : minNum;
+        }
+        if (band < maxNum - minNum) { band = maxNum - minNum; }
+    }
+    return 2 * (band + 1);
+}
 static const double _gaussQuad4Xsi[4]    = {-0.577350269189626,-0.577350269189626, 0.577350269189626, 0.577350269189626};
 static const double _gaussQuad4Eta[4]    = { 0.577350269189626,-0.577350269189626,-0.577350269189626, 0.577350269189626};
 static const double _gaussQuad4Weight[4] = { 1.000000000000000, 1.000000000000000, 1.000000000000000, 1.000000000000000};
@@ -540,6 +563,44 @@ void femDiscretePrint(femDiscrete *mySpace)
                 printf("   dphidxsi(%d)=%+.1f", j, dphidxsi[j]);
                 printf("   dphideta(%d)=%+.1f \n", j, dphideta[j]); }
             printf(" \n"); }}   
+}
+// Solver functions
+femSolver* femSolverFullCreate(int size){
+    femSolver* solver = (femSolver*) malloc(sizeof(femSolver));
+    solver->type = SOLVER_FULL;
+    solver->solver = femFullSystemCreate(size);
+    return solver;
+}
+
+femSolver* femSolverBandCreate(int size, int band){
+    femSolver* solver = (femSolver*) femSolverCreate(size);
+    solver->type = SOLVER_BAND;
+    solver->solver = femBandSystemCreate(band, size);
+    return solver;
+}
+
+femSolver* femSolverCreate(int size){
+    femSolver* solver = (femSolver*) malloc(sizeof(femSolver));
+    if (solver == NULL) {
+        fprintf(stderr, "Memory allocation failed for femSolver structure.\n");
+        return NULL;
+    }
+    solver->size = size;
+    return solver;
+}
+
+// TODO : SOLVER_GC
+void femSolverFree(femSolver* solver){
+    switch (solver->type) {
+    case SOLVER_FULL:
+        femFullSystemFree((femFullSystem*)solver->solver);
+        break;
+    case SOLVER_BAND:
+        femBandSystemFree((femBandSystem*)solver->solver);
+        break;
+    default:
+        break;
+    }
 }
 
 // Full system functions
@@ -790,7 +851,6 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     }
     problem->spaceEdge = femDiscreteCreate(2, FEM_EDGE);
     problem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
-    problem->system = femFullSystemCreate(size);
 
     // printf("Discrete space for the mesh:\n");
     // femDiscretePrint(problem->space);
@@ -846,6 +906,18 @@ femProblem* femElasticityRead(femGeo* geo, const char* problemPath, femSolverTyp
         }
         free(condType);
         free(domainName);
+    }
+    int size = 2 * geo->nodes->nNodes;
+    if (SOLVER_FULL == solverType) {
+        problem->solver = femSolverFullCreate(size);
+    } else if (SOLVER_BAND == solverType) {
+        int band = femComputeBand(geo);
+        problem->solver = femSolverBandCreate(size, band);
+    } else {
+        fprintf(stderr, "Unknown solver type: %d\n", solverType);
+        fclose(file);
+        free(problem);
+        return NULL;
     }
     problem->solverType = solverType;
     problem->renumberType = renumberType;
@@ -955,155 +1027,24 @@ void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBound
 
 // TODO
 void femElasticityAssembleElements(femProblem* problem){
-    femFullSystem* system = problem->system;
-    femDiscrete* space = problem->space;
-    femIntegration* rule = problem->rule;
-    femGeo* geo = problem->geometry;
-    femNodes* nodes = geo->nodes;
-    femMesh* edges = geo->edges;
-    femMesh* mesh = geo->mesh;
     
-
-    double x[4], y[4], phi[4], dphidxsi[4], dphideta[4], dphidx[4], dphidy[4];
-    int iElem, iInteg, iEdge, i, j, d, map[4], mapX[4], mapY[4];
-    int nLocal = mesh->nLocalNode;
-    double a = problem->A;
-    double b = problem->B;
-    double c = problem->C;
-    double rho = problem->rho;
-    double g = problem->g;
-    // double T = problem->T;
-    double** A = system->A;
-    double* B = system->B;
-
-    for (iElem = 0; iElem < mesh->nElem; iElem++){
-        for (j = 0; j < nLocal; j++){
-            map[j] = mesh->elem[iElem * nLocal + j];
-            mapX[j] = 2 * map[j];
-            mapY[j] = 2 * map[j] + 1;
-            x[j] = nodes->X[map[j]];
-            y[j] = nodes->Y[map[j]];
-        }
-
-        for (iInteg = 0; iInteg < rule->n; iInteg++){
-            double xsi = rule->xsi[iInteg];
-            double eta = rule->eta[iInteg];
-            double weight = rule->weight[iInteg];
-
-            // Compute the shape functions and their derivatives
-            femDiscretePhi2(space, xsi, eta, phi);
-            femDiscreteDphi2(space, xsi, eta, dphidxsi, dphideta);
-
-            double dxdxsi = 0.0;
-            double dxdeta = 0.0;
-            double dydxsi = 0.0;
-            double dydeta = 0.0;
-            for (i = 0; i < space->n; i++){
-                dxdxsi += x[i] * dphidxsi[i];
-                dxdeta += x[i] * dphideta[i];
-                dydxsi += y[i] * dphidxsi[i];
-                dydeta += y[i] * dphideta[i];
-            }
-            double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
-            
-            for (i = 0; i < space->n; i++){
-                dphidx[i] = (dydeta * dphidxsi[i] - dydxsi * dphideta[i]) / jac;
-                dphidy[i] = (-dxdeta * dphidxsi[i] + dxdxsi * dphideta[i]) / jac;   
-            }
-
-            double wJac = jac * weight;
-
-            for (i = 0; i < space->n; i++){
-                for (j =0; j < space->n; j++){
-                    A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + dphidy[i]* c * dphidy[j]) * wJac;
-                    A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + dphidy[i]* c * dphidx[j]) * wJac;
-                    A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + dphidx[i]* c * dphidy[j]) * wJac;
-                    A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + dphidx[i]* c * dphidx[j]) * wJac;   
-                }
-                B[mapY[i]] -= phi[i] * rho * g * jac * weight;
-            }
-        }
-    }
 }
 
 // TODO
 void femElasticityAssembleNeumann(femProblem* problem){
-    femFullSystem* system = problem->system;
-    femIntegration* rule = problem->ruleEdge;
-    femDiscrete* space = problem->spaceEdge;
-    femGeo* geo = problem->geometry;
-    femNodes* nodes = geo->nodes;
-    femMesh* edges = geo->edges;
-
-    double  x[2], y[2], phi[2];
-    int iBnd, iInteg, iElem, iEdge, i, j, map[2], mapU[2];
-
-    int nLocal = 2;
-    double* B = system->B;
-
-    for(iBnd=0; iBnd < problem->nBoundaryConditions; iBnd++){
-        femBoundaryCondition* condition = problem->conditions[iBnd];
-        femBoundaryType type = condition->type;
-        femDomain* domain = condition->domain;
-        double value = condition->value;
-
-        if (type == DIRICHLET_X || type == DIRICHLET_Y) {
-            continue;
-        }
-        int shift = -1;
-        if (type == NEUMANN_X) shift = 0;
-        if (type == NEUMANN_Y) shift = 1;
-        if (shift == -1) continue;
-
-        for(iEdge = 0; iEdge < domain->nElem; iEdge++){
-            iElem = domain->elem[iEdge];
-
-            for (j = 0; j < nLocal; j++){
-                map[j] = edges->elem[iElem * nLocal + j];
-                mapU[j] = 2 * map[j] + shift;
-                x[j] = nodes->X[map[j]];
-                y[j] = nodes->Y[map[j]];
-            }
-
-            double dx = x[1] - x[0];
-            double dy = y[1] - y[0];
-            double length = sqrt(dx * dx + dy * dy);
-            double jac = length / 2.0;
-
-            for (iInteg = 0; iInteg < rule->n; iInteg++){
-                double xsi = rule->xsi[iInteg];
-                double weight = rule->weight[iInteg];
-
-                femDiscretePhi(space, xsi, phi);
-
-                for (i = 0; i < space->n; i++){
-                    double coeff = phi[i] * jac * weight;
-                    B[mapU[i]] += coeff * value;
-                }
-            }
-        }
-    }
+    
 }
 
 // TODO
 double* femElasticitySolve(femProblem* problem){
-    femFullSystem* system = problem->system;
 
-    femFullSystemInit(system);
-
-    femElasticityAssembleElements(problem);
-    femElasticityAssembleNeumann(problem);
-
-    int size = system->size;
-
-    
 }
 
 // TODO
 double* femElasticityForces(femProblem* problem){
 
 }
-
+// OK
 double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y)){
     femIntegration* rule = problem->rule;
     femGeo* geo = problem->geometry;
@@ -1151,6 +1092,7 @@ double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double 
     return value;
 }
 
+// OK
 void femElasticityFree(femProblem* problem){
     if (problem != NULL){
         if (problem->geometry != NULL) {
@@ -1168,8 +1110,8 @@ void femElasticityFree(femProblem* problem){
         if (problem->ruleEdge != NULL) {
             femIntegrationFree(problem->ruleEdge);
         }
-        if (problem->system != NULL) {
-            femFullSystemFree(problem->system);
+        if (problem->solver != NULL) {
+            free(problem->solver->solver);
         }
         if (problem->constrainedNodes != NULL) {
             free(problem->constrainedNodes);
