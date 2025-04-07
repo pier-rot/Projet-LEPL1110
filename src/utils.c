@@ -1000,6 +1000,22 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     problem->spaceEdge = femDiscreteCreate(2, FEM_EDGE);
     problem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
 
+    /*
+    if (problem->solver->type == SOLVER_FULL) {
+        problem->solver->solver = (femFullSystem*) femFullSystemCreate(size);
+    } else if (problem->solver->type == SOLVER_BAND) {
+        int band = femComputeBand(geo);
+        problem->solver->solver = (femBandSystem*) femBandSystemCreate(band, size);
+    }else {
+        fprintf(stderr, "Unknown solver type.\n");
+        free(problem->soluce);
+        free(problem->constrainedNodes);
+        free(problem->residuals);
+        free(problem);
+        return NULL;
+    }
+    */
+
     return problem;
 }
 
