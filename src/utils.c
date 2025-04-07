@@ -1261,7 +1261,16 @@ void femElasticityAssembleElements(femProblem* problem){
 // TODO
 void femElasticityAssembleNeumann(femProblem* problem){
 
-    femFullSystem  *system = problem->system;
+    if (problem->solver->type == SOLVER_FULL) {
+        femFullSystem  *system = (femFullSystem*) problem->solver->solver;
+    } else if (problem->solver->type == SOLVER_BAND) {
+        femBandSystem *system = (femBandSystem*) problem->solver->solver;
+    } else {
+        printf("Error: Unknown solver type.\n");
+        return;
+    }
+    
+    //femFullSystem  *system = problem->system;
     femIntegration *rule = problem->ruleEdge;
     femDiscrete    *space = problem->spaceEdge;
     femGeo         *geo = problem->geometry;
