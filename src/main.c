@@ -2,6 +2,7 @@
 #include <math.h>
 #include "utils.h"
 #include "glfem.h"
+#include "geomesh.h"
 
 
 #define MAXFILENAMELENGTH 256
@@ -45,8 +46,8 @@ int main(int argc, char const *argv[])
     femRenumberType renumberType = X; // NONE or X or Y or RCMK
     int ierr;
     
-    
-    femGeo* geo = geoInit();
+    geoInitialize();
+    femGeo* geo = geoGetGeometry();
 
     /*/
     // Geometry parameters
@@ -72,17 +73,17 @@ int main(int argc, char const *argv[])
     geoMeshImport();
 
     
-    geoSetDomainName(geo, 0,"Bottom");
-    geoSetDomainName(geo, 3,"AttachPoint");
-    geoSetDomainName(geo, 1,"HandleRight");
-    geoSetDomainName(geo, 6,"HandleLeft");
+    geoSetDomainName(0,"Bottom");
+    geoSetDomainName(3,"AttachPoint");
+    geoSetDomainName(1,"HandleRight");
+    geoSetDomainName(6,"HandleLeft");
 
     //
     //  -2- Creation du fichier du maillage
     //
         
     char filename[] = "../data/elasticity.txt";
-    //geoMeshWrite(filename);
+    geoMeshWrite(filename);
 
     //
     // Création du problème
@@ -229,7 +230,8 @@ int main(int argc, char const *argv[])
     free(forcesX);
     free(forcesY);
     femElasticityFree(theProblem) ; 
-    geoFree(geo);
+    //geoFree(geo);
+    geoFinalize();
     glfwTerminate();
     
     
