@@ -37,6 +37,11 @@ typedef struct {
 } femDomain;
 
 typedef struct {
+    double xPlate, yPlate, LxPlate, LyPlate;
+    double xHole, yHole, rHole, hHole, dHole;
+    double xNotch, yNotch, rNotch, hNotch, dNotch;
+    double h;
+    double (*geoSize)(double x, double y);
     femNodes* nodes;
     femElementType elementType;
     femMesh* mesh;
@@ -102,12 +107,15 @@ typedef struct {
 
     femRenumberType renumberType;
     femSolverType solverType;
+
     femGeo* geometry;
     femDiscrete* space;
     femIntegration* rule;
     femDiscrete* spaceEdge;
     femIntegration* ruleEdge;
     femSolver* solver;
+    //femFullSystem *system;
+    //femBandSystem *bandSystem;
 } femProblem;
 
 // Geometry functions
@@ -120,6 +128,7 @@ void geoSetDomain(femGeo* geo, int iDomain, char* name);
 int geoGetDomain(femGeo* geo, char* name);
 void femMeshRenumber(femMesh* mesh, femRenumberType type);
 int compare(const void *N1, const void *N2);
+void geoMeshGenerate();
 
 // Integration functions
 femIntegration* femIntegrationCreate(int n, femElementType type);
@@ -187,5 +196,6 @@ double* femElasticitySolve(femProblem* problem);
 double* femElasticityForces(femProblem* problem);
 double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y));
 void femElasticityFree(femProblem* problem);
+
 
 #endif
