@@ -1237,7 +1237,66 @@ void femElasticityAssembleElements(femProblem* problem){
 // TODO
 void femElasticityAssembleNeumann(femProblem* problem){
     
+    femFullSystem  *system = problem->system;
+    femIntegration *rule = problem->ruleEdge;
+    femDiscrete    *space = problem->spaceEdge;
+    femGeo         *geo = problem->geometry;
+    femNodes       *nodes = geo->nodes;
+    femMesh        *edges = geo->edges;
+
+    int iCond, iEdge, iElem, iInteg, i, j;
+    int map[2], mapU[2];
+    double x[2], y[2], phi[2];
+    double *B = system->B;
+    int nNodes = 2;
+
+    for (iCond = 0; iCond < problem->nBoundaryConditions; iCond++) {
+        femBoundaryCondition *bc = problem->conditions[iCond];
+        femBoundaryType type = bc->type;
+        double imposedValue = bc->value;
+        double r = 0.0;
+
+        if (type == NEUMANN_X || type == NEUMANN_Y) {
+            int dir = (type == NEUMANN_X) ? 0 : 1;
+
+            for (iEdge = 0; iEdge < bc->domain->nElem; iEdge++) {
+                iElem = bc->domain->elem[iEdge];
+
+                for (j = 0; j < nNodes; j++) {
+                    map[j] = edges->elem[iElem * nNodes + j];
+                    mapU[j] = 2 * map[j] + dir;
+                    x[j] = nodes->X[map[j]];
+                    y[j] = nodes->Y[map[j]];
+                }
+
+                double dx = x[1] - x[0];
+                double dy = y[1] - y[0];
+                double halfLength = 0.5 * sqrt(dx * dx + dy * dy);
+
+                for (iInteg = 0; iInteg < rule->n; iInteg++) {
+                    double xsi = rule->xsi[iInteg];
+                    double weight = rule->weight[iInteg];
+                    femDiscretePhi(space, xsi, phi);
+
+                    if (problem->planarStrainStress == AXISYM) {
+                        r = 0.0;
+                        for (i = 0; i < space->n; i++) {
+                            r += phi[i] * y[i];  // car axisymétrie autour de X
+                        }
+                        for (i = 0; i < space->n; i++) {
+                            B[mapU[i]] += halfLength * phi[i] * imposedValue * weight * r;
+                        }
+                    } else {
+                        for (i = 0; i < space->n; i++) {
+                            B[mapU[i]] += halfLength * phi[i] * imposedValue * weight;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
+
 
 // TODO
 void femElasticityApplyDirichlet(femProblem* problem){
