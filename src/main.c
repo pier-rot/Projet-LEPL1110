@@ -44,6 +44,18 @@ int main(int argc, char const *argv[])
 
     geoPrint(geo);
 
+    // TO DO check if this is correct
+    geoSetDomainName(0,"Bottom");
+    geoSetDomainName(1,"Poignée coté gauche");
+    geoSetDomainName(2,"Top left");
+    geoSetDomainName(3,"Top right");
+    geoSetDomainName(4,"Corde");
+    geoSetDomainName(5,"Right");
+    geoSetDomainName(6,"Poignée coté droit");
+
+
+
+
     ///*
 
     //
