@@ -129,14 +129,14 @@ femGeo* geoInit();
 void geoFree(femGeo* geo);
 void geoPrint(femGeo* geo);
 void geoNodesPrint(femGeo* geo);
-void geoSetDomainName(femGeo* geo, int iDomain, char* name);
-int geoGetDomain(femGeo* geo, char* name);
+void geoSetDomain(femGeo* geo, int iDomain, char* name);
+int geoGetDomain2(femGeo* geo, char* name);
 void femMeshRenumber(femMesh* mesh, femRenumberType type);
 int compare(const void *N1, const void *N2);
 void geoMeshGenerate();
 
-void geoMeshImport(); //TO DO
-void geoMeshWrite(const char* filename); //TO DO
+//void geoMeshImport(); //TO DO
+//void geoMeshWrite(const char* filename); //TO DO
 
 // Integration functions
 femIntegration* femIntegrationCreate(int n, femElementType type);
