@@ -838,7 +838,8 @@ void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX
         }
     }
 }
-// OK
+
+
 double* femBandSystemEliminate(femBandSystem* system, int size){
     double **A, *B, factor;
     int i, j, k, jend, band;
@@ -876,6 +877,8 @@ double* femBandSystemEliminate(femBandSystem* system, int size){
 int inBand(int band, int row, int col){
     return (col >= row && col < row + band);
 }
+
+
 // Linear elasticity functions
 femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase) {
     femProblem* problem = (femProblem*)malloc(sizeof(femProblem));
@@ -1396,13 +1399,9 @@ double* femElasticitySolve(femProblem* problem){
     return problem->soluce;
 }
 
-// TODO
-double *femElasticityForces(femProblem *theProblem)
-{
-    
-}
 
-// OK
+
+
 double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y)){
     femIntegration* rule = problem->rule;
     femGeo* geo = problem->geometry;
