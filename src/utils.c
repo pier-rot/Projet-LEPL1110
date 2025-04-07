@@ -258,7 +258,7 @@ int geoGetDomain(femGeo* geo, char* name){
     return index;
 }
 
-void geoSetDomain(femGeo* geo, int iDomain, char* name){
+void geoSetDomainName(femGeo* geo, int iDomain, char* name){
     if (iDomain < 0 || iDomain >= geo->nDomains) {
         fprintf(stderr, "Invalid domain index: %d\n", iDomain);
         return;
