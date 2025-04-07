@@ -761,31 +761,7 @@ void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX
     }
 }
 
-void femFullSystemConstrain(femFullSystem* system, int node, double value){
-    double** A;
-    double* B;
-    int i, size;
 
-    A = system->A;
-    B = system->B;
-    size = system->size;
-    if (node < 0 || node >= size) {
-        fprintf(stderr, "Invalid node index: %d\n", node);
-        return;
-    }
-
-    for(i = 0; i < size; i++){
-        B[i] -= A[i][node] * value;
-        A[i][node] = 0.0;
-    }
-
-    for(i = 0; i < size; i++){
-        A[node][i] = 0.0;
-    }
-
-    A[node][node] = 1.0;
-    B[node] = value;
-}
 
 // Band system functions
 femBandSystem* femBandSystemCreate(int band, int size){
