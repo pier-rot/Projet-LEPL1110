@@ -1363,10 +1363,12 @@ void femBandSystemConstrain(femBandSystem* mySystem, int node, double value, int
 // TODO
 void femElasticityApplyDirichlet(femProblem* problem){
     
-    femFullSystem *system = NULL;
+    //femFullSystem *system = NULL;
     if (problem->solver->type == SOLVER_FULL) {
+        femFullSystem *system;
         system = (femFullSystem*) problem->solver->solver;
     } else if (problem->solver->type == SOLVER_BAND) {
+        femBandSystem *system;
         system = (femBandSystem*) problem->solver->solver;
     } else {
         printf("Erreur : femElasticityApplyDirichlet est prévu uniquement pour SOLVER_FULL ou SOLVER_BAND\n");
