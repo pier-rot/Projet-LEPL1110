@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include "gmshc.h"
 
 #define MAXNAME 128
 
