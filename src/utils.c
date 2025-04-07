@@ -812,6 +812,17 @@ void femFullSystemAssembleNeumann(femProblem* problem){
     }
 }
 
+void femFullSystemApplyDirichlet(femProblem* problem){
+    int* constrainedNodes = problem->constrainedNodes;
+    int size = problem->solver->size;
+    for (int i = 0; i < size; i++){
+        if (constrainedNodes[i] != 1){
+            double value = problem->conditions[constrainedNodes[i]]->value;
+            femFullSystemConstrain(problem->solver->solver, i, value);
+        }
+    }
+}
+
 void femFullSystemConstrain(femFullSystem* system, int node, double value){
     double** A;
     double* B;
@@ -1318,7 +1329,7 @@ double* femElasticitySolve(femProblem* problem){
     double* soluce;
 
     femElasticityAssembleElements(problem); // OK
-    femElasticityAssembleNeumann(problem); // TODO
+    femElasticityAssembleNeumann(problem); // FULL OK TODO BAND
     femElasticityApplyDirichlet(problem); // TODO
 
     soluce = femSolverEliminate(solver); // OK

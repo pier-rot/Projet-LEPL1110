@@ -145,6 +145,7 @@ double* femFullSystemEliminate(femFullSystem* system, int size);
 void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX, int* mapY, 
                           double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
 void femFullSystemAssembleNeumann(femProblem* problem);
+void femFullSystemApplyDirichlet(femProblem* problem);
 void femFullSystemConstrain(femFullSystem* system, int node, double value);
 
 // Band system functions
