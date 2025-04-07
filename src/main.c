@@ -72,17 +72,17 @@ int main(int argc, char const *argv[])
     geoMeshImport();
 
     
-    geoSetDomainName(0,"Bottom");
-    geoSetDomainName(3,"AttachPoint");
-    geoSetDomainName(1,"HandleRight");
-    geoSetDomainName(6,"HandleLeft");
+    geoSetDomainName(geo, 0,"Bottom");
+    geoSetDomainName(geo, 3,"AttachPoint");
+    geoSetDomainName(geo, 1,"HandleRight");
+    geoSetDomainName(geo, 6,"HandleLeft");
 
     //
     //  -2- Creation du fichier du maillage
     //
         
     char filename[] = "../data/elasticity.txt";
-    geoMeshWrite(filename);
+    //geoMeshWrite(filename);
 
     //
     // Création du problème
