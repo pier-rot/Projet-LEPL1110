@@ -760,6 +760,57 @@ void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX
         return;
     }
 }
+// OK
+void femFullSystemAssembleNeumann(femProblem* problem){
+    femFullSystem* system = problem->solver->solver;
+    femIntegration* rule = problem->ruleEdge;
+    femDiscrete* space = problem->spaceEdge;
+    femGeo* geo = problem->geometry;
+    femNodes* nodes = geo->nodes;
+    femMesh* edges = geo->edges;
+
+    double x[2], y[2], phi[2];
+    int iBnd, iElem, iInteg, iEdge, i, j, d, map[2], mapU[2];
+    
+    int nLocal = 2;
+    double *B  = system->B;
+
+    for (iBnd = 0; iBnd < problem->nBoundaryConditions; iBnd++){
+        femBoundaryCondition* condition = problem->conditions[iBnd];
+        femBoundaryType type = condition->type;
+        femDomain* domain = condition->domain;
+        double value = condition->value;
+
+        if (type == DIRICHLET_X || type == DIRICHLET_Y)continue;
+
+        int shift = (type == NEUMANN_X) ? 0 : 1;
+
+        for (iEdge = 0; iEdge < domain->nElem; iEdge++){
+            iElem = domain->elem[iEdge];
+
+            for(j = 0; j < nLocal; j++){
+                map[j] = edges->elem[iElem * nLocal + j];
+                mapU[j] = 2 * map[j] + shift;
+                x[j] = nodes->X[map[j]];
+                y[j] = nodes->Y[map[j]];
+            }
+
+            double dx = x[1] - x[0];
+            double dy = y[1] - y[0];
+            double length = sqrt(dx * dx + dy * dy);
+            double jac = length / 2.0;
+
+            for(iInteg = 0; iInteg < rule->n; iInteg++){
+                double xsi = rule->xsi[iInteg];
+                double weight = rule->weight[iInteg];
+
+                femDiscretePhi(space, xsi, phi);
+
+                for(i = 0; i < space-> n; i++){ B[mapU[i]] += phi[i] * value * jac * weight; }
+            }
+        }
+    }
+}
 
 void femFullSystemConstrain(femFullSystem* system, int node, double value){
     double** A;
@@ -888,6 +939,10 @@ void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX
         }
     }
 }
+void femBandSystemAssembleNeumann(femProblem* problem){
+
+}
+
 // OK
 double* femBandSystemEliminate(femBandSystem* system, int size){
     double **A, *B, factor;
@@ -1236,7 +1291,19 @@ void femElasticityAssembleElements(femProblem* problem){
 
 // TODO
 void femElasticityAssembleNeumann(femProblem* problem){
-    
+    femSolver* solver = problem->solver;
+
+    switch (solver->type){
+        case SOLVER_FULL:
+            femFullSystemAssembleNeumann(problem);
+            break;
+        case SOLVER_BAND:
+            femBandSystemAssembleNeumann(problem);
+            break;
+        default:
+            fprintf(stderr, "Unknown solver type: %d\n", solver->type);
+            break;
+    }
 }
 
 // TODO

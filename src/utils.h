@@ -144,6 +144,7 @@ void femFullSystemPrint(femFullSystem* system);
 double* femFullSystemEliminate(femFullSystem* system, int size);
 void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX, int* mapY, 
                           double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
+void femFullSystemAssembleNeumann(femProblem* problem);
 void femFullSystemConstrain(femFullSystem* system, int node, double value);
 
 // Band system functions
@@ -154,6 +155,7 @@ void femBandSystemFree(femBandSystem* system);
 void femBandSystemPrint(femBandSystem* system, int size);
 void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX, int* mapY, 
                           double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
+void femBandSystemAssembleNeumann(femProblem* problem);
 double* femBandSystemEliminate(femBandSystem* system, int size);
 int inBand(int band, int row, int col);
 void femBandSystemConstrain(femBandSystem* system, int node, double value, int size);
