@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.31.5)
 project(bowProject)
 
 set(EXEC_NAME bow)
@@ -28,6 +28,25 @@ if(MSVC OR MSYS OR MINGW)
         file(COPY ${GMSH_DLL} DESTINATION ${CMAKE_BINARY_DIR})
     endif()
 endif(MSVC OR MSYS OR MINGW)
+
+if(APPLE)
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
+        set(GMSH_LIBRARY ${CMAKE_SOURCE_DIR}/gmsh/${GMSH_VERSION}.${GMSH_MINOR}-MacOSARM-sdk/lib/libgmsh.dylib)
+        set(GMSH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/gmsh/${GMSH_VERSION}.${GMSH_MINOR}-MacOSARM-sdk/include)
+    else()    
+        set(GMSH_LIBRARY ${CMAKE_SOURCE_DIR}/gmsh/${GMSH_VERSION}.${GMSH_MINOR}-MacOSX-sdk/lib/libgmsh.dylib)
+        set(GMSH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/gmsh/${GMSH_VERSION}.${GMSH_MINOR}-MacOSX-sdk/include)
+    endif()
+endif(APPLE)
+
+if(UNIX AND NOT APPLE)
+    set(GMSH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/gmsh/${GMSH_VERSION}.${GMSH_MINOR}-Linux64-sdk/include)
+    set(GMSH_LIBRARY ${CMAKE_SOURCE_DIR}/gmsh/${GMSH_VERSION}.${GMSH_MINOR}-Linux64-sdk/lib/libgmsh.so)
+endif(UNIX AND NOT APPLE)
+
+message("GMSH_INCLUDE_DIR : ${GMSH_INCLUDE_DIR}")
+message("GMSH_LIBRARY : ${GMSH_LIBRARY}")
+include_directories(${GMSH_INCLUDE_DIR})
 
 # link the aforementioned libraries
 add_executable(${EXEC_NAME} src/glfem.c src/main.c src/utils.c)
