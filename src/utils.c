@@ -929,6 +929,7 @@ int inBand(int band, int row, int col){
 // Linear elasticity functions
 femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase) {
     femProblem* problem = (femProblem*)malloc(sizeof(femProblem));
+
     if (problem == NULL) {
         fprintf(stderr, "Memory allocation failed for femProblem structure.\n");
         return NULL;
@@ -1252,7 +1253,7 @@ void femElasticityAssembleElements(femProblem* problem){
 
 // TODO
 void femElasticityAssembleNeumann(femProblem* problem){
-    
+
     femFullSystem  *system = problem->system;
     femIntegration *rule = problem->ruleEdge;
     femDiscrete    *space = problem->spaceEdge;
@@ -1313,9 +1314,90 @@ void femElasticityAssembleNeumann(femProblem* problem){
     }
 }
 
+void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue) { //repris de fem.c devoir6
+    double  **A, *B;
+    int     i, size;
+
+    A    = mySystem->A;
+    B    = mySystem->B;
+    size = mySystem->size;
+
+    for (i=0; i < size; i++) {
+        
+        B[i] = B[i] - myValue * A[i][myNode];
+        A[i][myNode] = 0; 
+        A[myNode][i] = 0; 
+    } 
+
+    A[myNode][myNode] = 1.0;
+    B[myNode] = myValue;
+}
+
+//TO DO
+void femBandSystemConstrain(femBandSystem* mySystem, int node, double value, int size) {
+    double** A = mySystem->A;
+    double* B = mySystem->B;
+    int band = mySystem->band;
+    int i, j, jend;
+
+    if (node < 0 || node >= size) {
+        fprintf(stderr, "Invalid node index: %d\n", node);
+        return;
+    }
+
+    // Mettre à jour B en annulant les contributions de la colonne "node"
+    for (int i = 0; i < size; i++) {
+        int j = node - i;
+        if (j >= -band && j <= band) {
+            int k = j + band;
+            B[i] -= value * A[i][k];
+            A[i][k] = 0.0;
+        }
+    }
+
+    // Mettre à zéro la ligne correspondante
+    for (int j = -band; j <= band; j++) {
+        int col = node + j;
+        if (col >= 0 && col < size) {
+            int k = -j + band;
+            A[node][k] = 0.0;
+        }
+    }
+
+    A[node][node] = 1.0;
+    B[node] = value;
+}
+
 
 // TODO
 void femElasticityApplyDirichlet(femProblem* problem){
+    
+    femFullSystem *system = NULL;
+    if (problem->solver->type == SOLVER_FULL) {
+        system = (femFullSystem*) problem->solver->solver;
+    } else if (problem->solver->type == SOLVER_BAND) {
+        system = (femBandSystem*) problem->solver->solver;
+    } else {
+        printf("Erreur : femElasticityApplyDirichlet est prévu uniquement pour SOLVER_FULL ou SOLVER_BAND\n");
+    exit(1);
+    }
+
+    int *nodes = problem->constrainedNodes;
+    int size = system->size;
+    for (int i = 0; i < size; i++)
+    {
+        if (nodes[i] != -1)
+        {
+            double val = problem->conditions[nodes[i]]->value;
+            if (problem->solver->type == SOLVER_FULL) {
+                femFullSystemConstrain(system, i, val);
+            } else {
+                femBandSystemConstrain(system, i, val, size);
+            }
+                
+
+        }
+    }
 
 }
 
@@ -1338,9 +1420,11 @@ double* femElasticitySolve(femProblem* problem){
 }
 
 // TODO
-double* femElasticityForces(femProblem* problem){
-
+double *femElasticityForces(femProblem *theProblem)
+{
+    
 }
+
 // OK
 double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y)){
     femIntegration* rule = problem->rule;
