@@ -141,7 +141,9 @@ void femFullSystemInit(femFullSystem* system);
 femFullSystem* femFullSystemCreate(int size);
 void femFullSystemFree(femFullSystem* system);
 void femFullSystemPrint(femFullSystem* system);
-double* femFullSystemEliminate(femFullSystem* system);
+double* femFullSystemEliminate(femFullSystem* system, int size);
+void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX, int* mapY, 
+                          double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
 void femFullSystemConstrain(femFullSystem* system, int node, double value);
 
 // Band system functions
@@ -152,7 +154,8 @@ void femBandSystemFree(femBandSystem* system);
 void femBandSystemPrint(femBandSystem* system, int size);
 void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX, int* mapY, 
                           double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
-void femBandSystemEliminate(femBandSystem* system);
+double* femBandSystemEliminate(femBandSystem* system, int size);
+int inBand(int band, int row, int col);
 void femBandSystemConstrain(femBandSystem* system, int node, double value, int size);
 
 // Renumbering functions
@@ -166,8 +169,7 @@ femSolver* femSolverFullCreate(int size);
 void femSolverFree(femSolver* solver);
 void femSolverInit(femSolver* solver);
 void femSolverPrint(femSolver* solver);
-void femSolverAssemble(femSolver* solver, femProblem* problem, int* mapX, int* mapY, 
-                       double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc);
+void femSolverAssemble(femSolver *solver, femProblem *problem, int *mapX, int *mapY, double *phi, double *dphidx, double *dphidy, double weightedJac, double xLoc, int nLoc);
 void femSolverSystemConstrain(femSolver* solver, int node, double value);
 double* femSolverEliminate(femSolver* solver);
 
@@ -179,6 +181,7 @@ void femElasticityFullPrint(femProblem* problem);
 void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBoundaryType type, double value);
 void femElasticityAssembleElements(femProblem* problem);
 void femElasticityAssembleNeumann(femProblem* problem);
+void femElasticityApplyDirichlet(femProblem* problem);
 double* femElasticitySolve(femProblem* problem);
 double* femElasticityForces(femProblem* problem);
 double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y));

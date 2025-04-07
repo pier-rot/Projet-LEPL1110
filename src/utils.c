@@ -603,7 +603,33 @@ void femSolverFree(femSolver* solver){
     }
 }
 
-// Full system functions
+double* femSolverEliminate(femSolver* solver){
+    switch (solver->type) {
+    case SOLVER_FULL:
+        return femFullSystemEliminate((femFullSystem*)solver->solver, solver->size);
+    case SOLVER_BAND:
+        return femBandSystemEliminate((femBandSystem*)solver->solver, solver->size);
+    default:
+        fprintf(stderr, "Unknown solver type.\n");
+        return NULL;
+    }
+}
+
+
+void femSolverAssemble(femSolver *solver, femProblem *problem, int *mapX, int *mapY, double *phi, double *dphidx, double *dphidy, double weightedJac, double xLoc, int nLoc){
+    switch(solver->type) {
+        case SOLVER_FULL:
+            femFullSystemAssemble((femFullSystem*)solver->solver, problem, mapX, mapY, phi, dphidx, dphidy, weightedJac, xLoc, nLoc);
+            break;
+        case SOLVER_BAND:
+            femBandSystemAssemble((femBandSystem*)solver->solver, problem, mapX, mapY, phi, dphidx, dphidy, weightedJac, xLoc, nLoc);
+            break;
+        default:
+            fprintf(stderr, "Unknown solver type.\n");
+            break;
+    }
+}
+    // Full system functions
 void femFullSystemAlloc(femFullSystem* system, int size){
     int i;
     double* elem = (double*) malloc(sizeof(double) * size * (size +1));
@@ -660,15 +686,14 @@ void femFullSystemPrint(femFullSystem* system){
     }
 }
 
-double* femFullSystemEliminate(femFullSystem* system){
+double* femFullSystemEliminate(femFullSystem* system, int size){
     double** A;
     double* B;
     double factor;
-    int i,j,k,size;
+    int i,j,k;
 
     A = system->A;
     B = system->B;
-    size = system->size;
 
     // Gaussian elimination
     for (k=0; k < size; k++){
@@ -695,6 +720,45 @@ double* femFullSystemEliminate(femFullSystem* system){
     }
 
     return(system->B);
+}
+
+void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX, int* mapY, double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc){
+    double** A = system->A;
+    double* B = system->B;
+    double a = problem->A;
+    double b = problem->B;
+    double c = problem->C;
+    double rho = problem->rho;
+    double g = problem->g;
+
+    if (problem->planarStrainStress == PLANAR_STRAIN || problem->planarStrainStress == PLANAR_STRESS){
+        for(int i = 0; i < nLoc; i++){
+            for(int j = 0; j < nLoc; j++){
+                A[mapX[i]][mapX[j]] += (a * dphidx[i] * dphidx[j] + b * dphidy[i] * dphidy[j]) * wJac;
+                A[mapX[i]][mapY[j]] += (c * dphidx[i] * dphidy[j] + b * dphidy[i] * dphidx[j]) * wJac;
+                A[mapY[i]][mapX[j]] += (c * dphidx[i] * dphidy[j] + b * dphidy[i] * dphidx[j]) * wJac;
+                A[mapY[i]][mapY[j]] += (a * dphidy[i] * dphidy[j] + b * dphidx[i] * dphidx[j]) * wJac;
+            }
+            B[mapX[i]] -= phi[i] * g * rho * wJac;
+        }
+    }
+    else if (problem->planarStrainStress == AXISYM)
+    {
+        for (int i = 0; i < nLoc; i++)
+        {
+            for (int j = 0; j < nLoc; j++)
+            {
+                A[mapX[i]][mapX[j]] += (dphidx[i] * a * xLoc * dphidx[j] + dphidy[i] * c * xLoc * dphidy[j] + dphidx[i] * b * phi[j] + phi[i] * (b * dphidx[j] + a * phi[j] / xLoc)) * wJac;
+                A[mapX[i]][mapY[j]] += (dphidx[i] * b * xLoc * dphidy[j] + dphidy[i] * c * xLoc * dphidx[j] + phi[i] * b * dphidy[j]) * wJac;
+                A[mapY[i]][mapX[j]] += (dphidy[i] * b * xLoc * dphidx[j] + dphidx[i] * c * xLoc * dphidy[j] + dphidy[i] * b * phi[j]) * wJac;
+                A[mapY[i]][mapY[j]] += (dphidy[i] * a * xLoc * dphidy[j] + dphidx[i] * c * xLoc * dphidx[j]) * wJac;
+            }
+            B[mapX[i]] -= phi[i] * xLoc * g * rho * wJac;
+        }
+    } else {
+        fprintf(stderr, "Unknown planar strain/stress type.\n");
+        return;
+    }
 }
 
 void femFullSystemConstrain(femFullSystem* system, int node, double value){
@@ -776,7 +840,91 @@ void femBandSystemPrint(femBandSystem* system, int size){
 
 void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX, int* mapY, double* phi,
                             double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc){
+    double** A = system->A;
+    double* B = system->B;
+    double a = problem->A;
+    double b = problem->B;
+    double c = problem->C;
+    double rho = problem->rho;
+    double g = problem->g;
+    int band = system->band;
+    int i, j;
+
+    if (problem->planarStrainStress == PLANAR_STRAIN || problem->planarStrainStress == PLANAR_STRESS){
+        for (i = 0; i < nLoc; i++){
+            for (j = 0; j < nLoc; j++){
+                if (inBand(band, mapX[i], mapX[j])){
+                    A[mapX[i]][mapX[j]] += (a * dphidx[i] * dphidx[j] + b * dphidy[i] * dphidy[j]) * wJac;
+                }
+                if (inBand(band, mapX[i], mapY[j])){
+                    A[mapX[i]][mapY[j]] += (c * dphidx[i] * dphidy[j] + b * dphidy[i] * dphidx[j]) * wJac;
+                }
+                if (inBand(band, mapY[i], mapX[j])){
+                    A[mapY[i]][mapX[j]] += (c * dphidx[i] * dphidy[j] + b * dphidy[i] * dphidx[j]) * wJac;
+                }
+                if (inBand(band, mapY[i], mapY[j])){
+                    A[mapY[i]][mapY[j]] += (a * dphidy[i] * dphidy[j] + b * dphidx[i] * dphidx[j]) * wJac;
+                }
+            }
+            B[mapX[i]] -= phi[i] * g * rho * wJac;
+        }
+    } else if (problem->planarStrainStress == AXISYM){
+        for (i = 0; i < nLoc; i++) {
+            for (j = 0; j < nLoc; j++) {
+                if (inBand(band, mapX[i], mapX[j])){
+                    A[mapX[i]][mapX[j]] += (dphidx[i] * a * xLoc * dphidx[j] + dphidy[i] * c * xLoc * dphidy[j] + dphidx[i] * b * phi[j] + phi[i] * (b * dphidx[j] + a * phi[j] / xLoc)) * wJac;
+                }
+                if (inBand(band, mapX[i], mapY[j])){
+                    A[mapX[i]][mapY[j]] += (dphidx[i] * b * xLoc * dphidy[j] + dphidy[i] * c * xLoc * dphidx[j] + phi[i] * b * dphidy[j]) * wJac;
+                }
+                if (inBand(band, mapY[i], mapX[j])){
+                    A[mapY[i]][mapX[j]] += (dphidy[i] * b * xLoc * dphidx[j] + dphidx[i] * c * xLoc * dphidy[j] + dphidy[i] * b * phi[j]) * wJac;
+                }
+                if (inBand(band, mapY[i], mapY[j])){
+                    A[mapY[i]][mapY[j]] += (dphidy[i] * a * xLoc * dphidy[j] + dphidx[i] * c * xLoc * dphidx[j]) * wJac;
+                }
+            }
+            B[mapX[i]] -= phi[i] * xLoc * g * rho * wJac;
+        }
+    }
+}
+// OK
+double* femBandSystemEliminate(femBandSystem* system, int size){
+    double **A, *B, factor;
+    int i, j, k, jend, band;
+    A = system->A;
+    B = system->B;
+    band = system->band;
+
+    /* Gauss elimination */
+    for (k = 0; k < size; k++)
+    {
+        if (fabs(A[k][k]) <= 1e-16) { 
+            fprintf(stderr, "Pivot is %e at index %d\nCannot eliminate\n", A[k][k], k);
+            return NULL; 
+        }
+        jend = (k + band < size) ? k + band : size;
+        for (i = k + 1; i < jend; i++)
+        {
+            factor = A[k][i] / A[k][k];
+            for (j = i ; j < jend; j++) { A[i][j] -= factor * A[k][j]; }
+            B[i] -= factor * B[k];
+        }    
+    }
     
+    /* Back-substitution */
+    for (i = size - 1; i >= 0 ; i--)
+    {
+        factor = 0;
+        jend = (i + band < size) ? i + band : size;
+        for (j = i + 1 ; j < jend; j++) { factor += A[i][j] * B[j]; }
+        B[i] = ( B[i] - factor) / A[i][i];
+    }
+    return B;
+}
+
+int inBand(int band, int row, int col){
+    return (col >= row && col < row + band);
 }
 // Linear elasticity functions
 femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase) {
@@ -851,11 +999,6 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     }
     problem->spaceEdge = femDiscreteCreate(2, FEM_EDGE);
     problem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
-
-    // printf("Discrete space for the mesh:\n");
-    // femDiscretePrint(problem->space);
-    // printf("Discrete space for the edges:\n");
-    // femDiscretePrint(problem->spaceEdge);
 
     return problem;
 }
@@ -1027,7 +1170,68 @@ void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBound
 
 // TODO
 void femElasticityAssembleElements(femProblem* problem){
-    
+    femSolver *solver = problem->solver;
+    femIntegration *rule = problem->rule;
+    femDiscrete *space = problem->space;
+    femGeo *geo = problem->geometry;
+    femNodes *theNodes = geo->nodes;
+    femMesh *theMesh = geo->mesh;
+
+    int nLocal = space->n;
+    int *number = theMesh->nodes->number;    
+
+    double xLoc, x[nLocal], y[nLocal], phi[nLocal], dphidxsi[nLocal], dphideta[nLocal], dphidx[nLocal], dphidy[nLocal];
+    double xsi, eta, weight, dxdxsi, dxdeta, dydxsi, dydeta, jac, weightedJac;
+    int iElem, iInteg, iEdge, i, map[nLocal], mapX[nLocal], mapY[nLocal];
+
+    for (iElem = 0; iElem < theMesh->nElem; iElem++)
+    {
+        for (i = 0; i < space->n; i++)
+        {
+            map[i] = theMesh->elem[iElem * nLocal + i];
+            x[i] = theNodes->X[map[i]];
+            y[i] = theNodes->Y[map[i]];
+            map[i] = number[map[i]];
+            mapX[i] = 2 * map[i];
+            mapY[i] = 2 * map[i] + 1;
+        }
+
+        for (iInteg = 0; iInteg < rule->n; iInteg++)
+        {
+            xsi    = rule->xsi[iInteg];
+            eta    = rule->eta[iInteg];
+            weight = rule->weight[iInteg];
+
+            femDiscretePhi2(space, xsi, eta, phi);
+            femDiscreteDphi2(space, xsi, eta, dphidxsi, dphideta);
+
+            dxdxsi = 0.0; dydxsi = 0.0;
+            dxdeta = 0.0; dydeta = 0.0;
+            xLoc = 0.0;
+            for (i = 0; i < space->n; i++)
+            {
+                dxdxsi += x[i] * dphidxsi[i];
+                dxdeta += x[i] * dphideta[i];
+                dydxsi += y[i] * dphidxsi[i];
+                dydeta += y[i] * dphideta[i];
+                xLoc   += x[i] * phi[i];
+            }
+
+            jac = dxdxsi * dydeta - dxdeta * dydxsi;
+            if (jac < 0.0) { printf("Jacobian should be positive!\n"); }
+            jac = fabs(jac);
+
+            for (i = 0; i < space->n; i++)
+            {
+                dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;
+                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac;
+            }
+
+            weightedJac = jac * weight;
+
+            femSolverAssemble(solver, problem, mapX, mapY, phi, dphidx, dphidy, weightedJac, xLoc, space->n);
+        }
+    }
 }
 
 // TODO
@@ -1036,8 +1240,26 @@ void femElasticityAssembleNeumann(femProblem* problem){
 }
 
 // TODO
-double* femElasticitySolve(femProblem* problem){
+void femElasticityApplyDirichlet(femProblem* problem){
 
+}
+
+// TODO
+double* femElasticitySolve(femProblem* problem){
+    femSolver* solver = problem->solver;
+    femNodes* nodes = problem->geometry->nodes;
+    double* soluce;
+
+    femElasticityAssembleElements(problem); // OK
+    femElasticityAssembleNeumann(problem); // TODO
+    femElasticityApplyDirichlet(problem); // TODO
+
+    soluce = femSolverEliminate(solver); // OK
+    for (int i = 0; i <nodes->nNodes; i++){
+        problem->soluce[2*i]= soluce[2*nodes->number[i]];
+        problem->soluce[2*i+1]= soluce[2*nodes->number[i]+1];
+    }
+    return problem->soluce;
 }
 
 // TODO
