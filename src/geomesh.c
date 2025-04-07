@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "geomesh.h"
 
 femGeo theGeometry;
 
@@ -17,7 +18,7 @@ void geoInitialize()
     gmshModelMeshSetSizeCallback(geoGmshSize,NULL,&ierr);     ErrorGmsh(ierr);
     theGeometry.nodes = NULL;
     theGeometry.mesh = NULL;
-    theGeometry.mesh = NULL;
+    theGeometry.edges = NULL;
     theGeometry.nDomains = 0;
     theGeometry.domains = NULL;
 }
@@ -33,9 +34,9 @@ void geoFinalize()
     if (theGeometry.mesh) {
         free(theGeometry.mesh->elem);
         free(theGeometry.mesh); }
-    if (theGeometry.mesh) {
-        free(theGeometry.mesh->elem);
-        free(theGeometry.mesh); }
+    if (theGeometry.edges) {
+        free(theGeometry.edges->elem);
+        free(theGeometry.edges); }
     for (int i=0; i < theGeometry.nDomains; i++) {
         free(theGeometry.domains[i]->elem);
         free(theGeometry.domains[i]);  }
@@ -214,7 +215,7 @@ void geoMeshWrite(const char *filename)
    for (int i = 0; i < theNodes->nNodes; i++) {
       fprintf(file,"%6d : %14.7e %14.7e \n",i,theNodes->X[i],theNodes->Y[i]); }
       
-   femMesh *theEges = theGeometry.mesh;
+   femMesh *theEges = theGeometry.edges;
    fprintf(file,"Number of edges %d \n",theEges->nElem);
    int *elem =theEges->elem;
    for (int i = 0; i <theEges->nElem; i++) {
