@@ -396,3 +396,38 @@ void geoMeshGenerate() {
 
     return;
 }
+
+void femError(char *text, int line, char *file)                                  
+{ 
+    printf("\n-------------------------------------------------------------------------------- ");
+    printf("\n  Error in %s at line %d : \n  %s\n", file, line, text);
+    printf("--------------------------------------------------------------------- Yek Yek !! \n\n");
+    exit(69);                                                 
+}
+
+void femErrorGmsh(int ierr, int line, char *file)                                  
+{ 
+    if (ierr == 0)  return;
+    printf("\n-------------------------------------------------------------------------------- ");
+    printf("\n  Error in %s at line %d : \n  error code returned by gmsh %d\n", file, line, ierr);
+    printf("--------------------------------------------------------------------- Yek Yek !! \n\n");
+    gmshFinalize(NULL);                                        
+    exit(69);                                                 
+}
+
+void femErrorScan(int test, int line, char *file)                                  
+{ 
+    if (test >= 0)  return;
+    
+    printf("\n-------------------------------------------------------------------------------- ");
+    printf("\n  Error in fscanf or fgets in %s at line %d : \n", file, line);
+    printf("--------------------------------------------------------------------- Yek Yek !! \n\n");   
+    exit(69);                                       
+}
+
+void femWarning(char *text, int line, char *file)                                  
+{ 
+    printf("\n-------------------------------------------------------------------------------- ");
+    printf("\n  Warning in %s at line %d : \n  %s\n", file, line, text);
+    printf("--------------------------------------------------------------------- Yek Yek !! \n\n");                                              
+}
