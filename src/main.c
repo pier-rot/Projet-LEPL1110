@@ -229,12 +229,12 @@ int main(int argc, char const *argv[])
     free(forcesX);
     free(forcesY);
     femElasticityFree(theProblem) ; 
-    geoFree();
+    geoFree(geo);
     glfwTerminate();
     
     
     //
-    //  -3- Champ de la taille de r�f�rence du maillage
+    //  
     //
 
     /*
