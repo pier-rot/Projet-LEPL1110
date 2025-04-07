@@ -566,7 +566,7 @@ void femDiscretePrint(femDiscrete *mySpace)
 }
 // Solver functions
 femSolver* femSolverFullCreate(int size){
-    femSolver* solver = (femSolver*) malloc(sizeof(femSolver));
+    femSolver* solver = (femSolver*) femSolverCreate(size);
     solver->type = SOLVER_FULL;
     solver->solver = femFullSystemCreate(size);
     return solver;
@@ -697,7 +697,7 @@ double* femFullSystemEliminate(femFullSystem* system, int size){
 
     // Gaussian elimination
     for (k=0; k < size; k++){
-        if (fabs(A[k][k] <= 1e-16)){
+        if (fabs(A[k][k]) <= 1e-16){
             printf("Pivot is %e at index %d\nCannot eliminate\n", A[k][k], k);
             return NULL;
         }
