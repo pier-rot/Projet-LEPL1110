@@ -1580,3 +1580,42 @@ void geoMeshGenerate() {
 
     return;
 }
+
+
+
+double femMin(double *x, int n) 
+{
+    double myMin = x[0];
+    int i;
+    for (i=1 ;i < n; i++) 
+        myMin = fmin(myMin,x[i]);
+    return myMin;
+}
+
+double femMax(double *x, int n) 
+{
+    double myMax = x[0];
+    int i;
+    for (i=1 ;i < n; i++) 
+        myMax = fmax(myMax,x[i]);
+    return myMax;
+}
+
+//TO DO 
+void geoMeshImport() 
+{
+}   
+
+//TO DO
+void geoMeshWrite(const char *filename){
+    FILE *file = fopen(filename, "w");
+
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file for writing: %s\n", filename);
+        return;
+    }
+    femNodes *nodes = theGeometry.nodes;
+    fprintf(file, "Number of nodes: %d\n", nodes->nNodes);
+
+
+}
