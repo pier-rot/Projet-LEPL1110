@@ -9,6 +9,10 @@
 #include "gmshc.h"
 
 #define MAXNAME 128
+#define FALSE 0 
+#define TRUE  1
+
+
 
 typedef enum {FEM_TRIANGLE,FEM_QUAD,FEM_EDGE} femElementType;
 typedef enum {DIRICHLET_X,DIRICHLET_Y,NEUMANN_X,NEUMANN_Y} femBoundaryType;
@@ -197,6 +201,13 @@ double* femElasticitySolve(femProblem* problem);
 double* femElasticityForces(femProblem* problem);
 double femElasticityIntegrate(femProblem* problem, double (*f)(double x, double y));
 void femElasticityFree(femProblem* problem);
+
+double              femMin(double *x, int n);
+double              femMax(double *x, int n);
+void                femError(char *text, int line, char *file);
+void                femErrorScan(int test, int line, char *file);
+void                femErrorGmsh(int test, int line, char *file);
+void                femWarning(char *text, int line, char *file);
 
 
 #endif
