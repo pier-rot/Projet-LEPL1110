@@ -1,5 +1,9 @@
 #include "utils.h"
 
+
+femGeo theGeometry;
+
+femGeo *geoGetGeometry()                        { return &theGeometry; }
 femGeo* geoInit() {
     femGeo* geo = (femGeo*)malloc(sizeof(femGeo));
     if (geo == NULL) {
