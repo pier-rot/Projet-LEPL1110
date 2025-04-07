@@ -49,7 +49,7 @@ message("GMSH_LIBRARY : ${GMSH_LIBRARY}")
 include_directories(${GMSH_INCLUDE_DIR})
 
 # link the aforementioned libraries
-add_executable(${EXEC_NAME} src/glfem.c src/main.c src/utils.c)
+add_executable(${EXEC_NAME} src/glfem.c src/main.c src/utils.c src/geomesh.c)
 target_link_libraries(${EXEC_NAME} glfw ${OPENGL_gl_LIBRARY} ${GMSH_LIBRARY})
 
 if(APPLE)
