@@ -816,7 +816,7 @@ void femFullSystemApplyDirichlet(femProblem* problem){
     int* constrainedNodes = problem->constrainedNodes;
     int size = problem->solver->size;
     for (int i = 0; i < size; i++){
-        if (constrainedNodes[i] != 1){
+        if (constrainedNodes[i] != -1){
             double value = problem->conditions[constrainedNodes[i]]->value;
             femFullSystemConstrain(problem->solver->solver, i, value);
         }
@@ -952,6 +952,43 @@ void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX
 }
 void femBandSystemAssembleNeumann(femProblem* problem){
 
+}
+
+void femBandSystemApplyDirichlet(femProblem* problem){
+    int* constrainedNodes = problem->constrainedNodes;
+    int size = problem->solver->size;
+    for (int i = 0; i < size; i++){
+        if (constrainedNodes[i] != -1){
+            double value = problem->conditions[constrainedNodes[i]]->value;
+            femBandSystemConstrain(problem->solver->solver, i, value, size);
+        }
+    }
+}
+
+void femBandSystemConstrain(femBandSystem* system, int node, double value, int size){
+    // double** A;
+    // double* B;
+    // int i, size;
+// 
+    // A = system->A;
+    // B = system->B;
+    // size = system->size;
+    // if (node < 0 || node >= size) {
+        // fprintf(stderr, "Invalid node index: %d\n", node);
+        // return;
+    // }
+// 
+    // for(i = 0; i < size; i++){
+        // B[i] -= A[i][node] * value;
+        // A[i][node] = 0.0;
+    // }
+// 
+    // for(i = 0; i < size; i++){
+        // A[node][i] = 0.0;
+    // }
+// 
+    // A[node][node] = 1.0;
+    // B[node] = value;
 }
 
 // OK
@@ -1319,7 +1356,15 @@ void femElasticityAssembleNeumann(femProblem* problem){
 
 // TODO
 void femElasticityApplyDirichlet(femProblem* problem){
-
+    int *constrainedNodes = problem->constrainedNodes;
+    femSolver* solver = problem->solver;
+    if (solver->type == SOLVER_FULL){
+        femFullSystemApplyDirichlet(problem);
+    } else if (solver->type == SOLVER_BAND){
+        femBandSystemApplyDirichlet(problem);
+    } else {
+        fprintf(stderr, "Unknown solver type: %d\n", solver->type);
+    }
 }
 
 // TODO
@@ -1331,12 +1376,15 @@ double* femElasticitySolve(femProblem* problem){
     femElasticityAssembleElements(problem); // OK
     femElasticityAssembleNeumann(problem); // FULL OK TODO BAND
     femElasticityApplyDirichlet(problem); // TODO
-
+    
     soluce = femSolverEliminate(solver); // OK
     for (int i = 0; i <nodes->nNodes; i++){
         problem->soluce[2*i]= soluce[2*nodes->number[i]];
         problem->soluce[2*i+1]= soluce[2*nodes->number[i]+1];
     }
+    femFullSystem* fullSystem = problem->solver->solver;
+    printf("%le, %le\n", fullSystem->A[0][0], fullSystem->A[0][1]);
+    printf("%le, %le\n", fullSystem->A[1][0], fullSystem->A[1][1]);
     return problem->soluce;
 }
 
