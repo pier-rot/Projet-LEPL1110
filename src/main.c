@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
     femElementType elementType = FEM_TRIANGLE; // FEM_TRIANGLE or FEM_QUAD
     femElasticCase iCase = PLANAR_STRESS;  // PLANAR_STRESS or PLANAR_STRAIN or AXISYM
     femSolverType solverType = SOLVER_FULL; // SOLVER_FULL or SOLVER_BAND or SOLVER_GC
-    femRenumberType renumberType = X; // NONE or X or Y or RCMK
+    femRenumberType renumberType = NONE; // NONE or X or Y or RCMK
 
     // Initialize the femGeo structure
     femGeo* geo = geoRead(meshfile);
@@ -49,7 +49,7 @@ int main(int argc, char const *argv[])
     // geoPrint(geo);
     femMeshRenumber(geo->mesh, renumberType);
     // geoNodesPrint(geo);
-
+    
 
     femProblem* problem = femElasticityRead(geo, problemfile, solverType, renumberType);
     if (problem == NULL) {
@@ -57,9 +57,34 @@ int main(int argc, char const *argv[])
         geoFree(geo);
         return 1;
     }
+
+    femElasticityPrint(problem);    
+
+    double* soluce = problem->soluce;
+    soluce = femElasticitySolve(problem);
     
+    
+    double* displacement = malloc(geo->nodes->nNodes * sizeof(double));
+    
+    for (int i = 0; i < geo->nodes->nNodes; i++) {
+       displacement[i] = sqrt(pow(soluce[2*i], 2) + pow(soluce[2*i+1], 2));
+    }
+
+    double min = displacement[0];
+    double max = displacement[0];
+    for (int i = 1; i < geo->nodes->nNodes; i++) {
+        if (displacement[i] < min) {
+            min = displacement[i];
+        }
+        if (displacement[i] > max) {
+            max = displacement[i];
+        }
+    }
+    printf("Displacement min: %le\n", min);
+    printf("Displacement max: %le\n", max);
     // femElasticityFullPrint(problem);
     geoFree(geo);
+    
     // femFree(problem);
     exit(EXIT_SUCCESS);
     return 0;
