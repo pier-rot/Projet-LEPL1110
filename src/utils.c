@@ -1486,3 +1486,21 @@ void femElasticityFree(femProblem* problem){
         free(problem);
     }
 }
+
+double femMin(double *x, int n) 
+{
+    double myMin = x[0];
+    int i;
+    for (i=1 ;i < n; i++) 
+        myMin = fmin(myMin,x[i]);
+    return myMin;
+}
+
+double femMax(double *x, int n) 
+{
+    double myMax = x[0];
+    int i;
+    for (i=1 ;i < n; i++) 
+        myMax = fmax(myMax,x[i]);
+    return myMax;
+}
