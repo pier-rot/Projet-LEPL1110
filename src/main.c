@@ -77,6 +77,7 @@ int main(int argc, char const *argv[])
     geoSetDomainName(3,"AttachPoint");
     geoSetDomainName(1,"HandleRight");
     geoSetDomainName(6,"HandleLeft");
+    printf("geo h : %f\n",geo->h);
 
     //
     //  -2- Creation du fichier du maillage
@@ -95,18 +96,20 @@ int main(int argc, char const *argv[])
     double g   = 0.0; //Gravity in m/s^2
     double t2   = 0.01; // thickness of the plate
 
+    
     /*
-
     femNodes *theNodes = geo->nodes;
     theNodes->number = malloc(theNodes->nNodes * sizeof(int));
     for (int i = 0; i<theNodes->nNodes; i++) {
         theNodes->number[i] = i;
 
+    
     }
     */
 
     femProblem* theProblem = femElasticityCreate(geo,E,nu,rho,g,t2,iCase,solverType, renumberType);
     femElasticityAddBoundaryCondition(theProblem,"HandleRight",DIRICHLET_X,0.0);
+    femElasticityAddBoundaryCondition(theProblem,"HandleLeft",DIRICHLET_X,0.0);
     femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0.0);
     femElasticityAddBoundaryCondition(theProblem,"AttachPoint",NEUMANN_Y,-10e7);
     femElasticityPrint(theProblem);
