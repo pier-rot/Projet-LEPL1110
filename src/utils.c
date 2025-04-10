@@ -255,6 +255,7 @@ int compare(const void *N1, const void *N2)
 
 void femMeshRenumber(femMesh *theMesh, femRenumberType renumType)
 {
+    printf("Renumbering mesh with type %d\n", renumType);
     int i, *inverse;
     inverse = (int *) malloc(sizeof(int) * theMesh->nodes->nNodes);
     for (i = 0; i < theMesh->nodes->nNodes; i++){
@@ -761,11 +762,13 @@ void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX
 
 // Band system functions
 femBandSystem* femBandSystemCreate(int band, int size){
-    femBandSystem* system = (femBandSystem*) malloc(sizeof(femBandSystem));
+    femBandSystem* system = malloc(sizeof(femBandSystem));
     if (system == NULL) {
         fprintf(stderr, "Memory allocation failed for femBandSystem structure.\n");
         return NULL;
     }
+    
+
     femBandSystemAlloc(system, size, band);
     femBandSystemInit(system, size);
     return system;
@@ -778,6 +781,7 @@ void femBandSystemAlloc(femBandSystem* system, int size, int band){
     if (system->A == NULL){fprintf(stderr, "Memory allocation failed for band system A.\n"); return;}
     system->band = band;
     system->A[0] = system->B + size;
+    system -> size = size;
     for (int i = 1; i < size; i++){system->A[i] = system->A[i-1] + band - 1;}
 
 }
@@ -986,8 +990,9 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
         problem->solver = femSolverFullCreate(size);
         //problem->solver->solver = (femFullSystem*) femFullSystemCreate(size);
     } else if (solverType == SOLVER_BAND) {
+        printf("Band system solver\n");
         int band = femComputeBand(geo);
-        //problem->solver->solver = (femBandSystem*) femBandSystemCreate(band, size);
+        printf("Band size: %d\n", band);
         problem->solver = femSolverBandCreate(size, band);
         femMesh* theMesh = geo->mesh;
         femMeshRenumber(theMesh, renumberType);

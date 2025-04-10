@@ -43,7 +43,8 @@ int main(int argc, char const *argv[])
     femElementType elementType = FEM_TRIANGLE; // FEM_TRIANGLE or FEM_QUAD
     femElasticCase iCase = PLANAR_STRESS;  // PLANAR_STRESS or PLANAR_STRAIN or AXISYM
     femSolverType solverType = SOLVER_FULL; // SOLVER_FULL or SOLVER_BAND or SOLVER_GC
-    femRenumberType renumberType = X; // NONE or X or Y or RCMK
+    //femSolverType solverType = SOLVER_BAND; 
+    femRenumberType renumberType = NONE; // NONE or X or Y or RCMK
     int ierr;
     
     geoInitialize();
