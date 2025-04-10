@@ -1158,6 +1158,7 @@ void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBound
 
 // TODO
 void femElasticityAssembleElements(femProblem* problem){
+    printf("Assembling elements...\n");
     femSolver *solver = problem->solver;
     femIntegration *rule = problem->rule;
     femDiscrete *space = problem->space;
@@ -1224,6 +1225,7 @@ void femElasticityAssembleElements(femProblem* problem){
 
 // TODO
 void femElasticityAssembleNeumann(femProblem* problem){  
+    printf("Assembling Neumann conditions...\n");
     void *solverStruct = problem->solver->solver;
 
     femFullSystem  *systemFull = NULL;
@@ -1356,6 +1358,7 @@ void femBandSystemConstrain(femBandSystem* mySystem, int node, double value, int
 
 // TODO
 void femElasticityApplyDirichlet(femProblem* problem){
+    printf("Applying Dirichlet conditions...\n");
     
     void *solverStruct = problem->solver->solver;
     int size;
@@ -1412,24 +1415,6 @@ double* femElasticitySolve(femProblem* problem){
         problem->soluce[2*i+1]= soluce[2*nodes->number[i]+1];
     }
     return problem->soluce;
-}
-
-void femFullSystemInit(femFullSystem *mySystem){
-    int i,size = mySystem->size;
-    for (i=0 ; i < size*(size+1) ; i++) 
-        mySystem->B[i] = 0;
-
-}
-
-void femBandSystemInit(femBandSystem *mySystem)
-{
-    int i;
-    int size = mySystem->size;  
-    int band = mySystem->band;
-
-    for (i = 0; i < size*(band+1); i++)
-        mySystem->B[i] = 0.0;
-        
 }
 
 
