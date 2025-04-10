@@ -734,10 +734,10 @@ void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX
     if (problem->planarStrainStress == PLANAR_STRAIN || problem->planarStrainStress == PLANAR_STRESS){
         for(int i = 0; i < nLoc; i++){
             for(int j = 0; j < nLoc; j++){
-                A[mapX[i]][mapX[j]] += (a * dphidx[i] * dphidx[j] + b * dphidy[i] * dphidy[j]) * wJac;
-                A[mapX[i]][mapY[j]] += (c * dphidx[i] * dphidy[j] + b * dphidy[i] * dphidx[j]) * wJac;
-                A[mapY[i]][mapX[j]] += (c * dphidx[i] * dphidy[j] + b * dphidy[i] * dphidx[j]) * wJac;
-                A[mapY[i]][mapY[j]] += (a * dphidy[i] * dphidy[j] + b * dphidx[i] * dphidx[j]) * wJac;
+                A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + dphidy[i] * c * dphidy[j]) * wJac;
+                A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + dphidy[i] * c * dphidx[j]) * wJac;
+                A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + dphidx[i] * c * dphidy[j]) * wJac;
+                A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + dphidx[i] * c * dphidx[j]) * wJac;
             }
             B[mapY[i]] -= phi[i] * g * rho * wJac;
         }
@@ -928,7 +928,7 @@ void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX
                     A[mapY[i]][mapY[j]] += (a * dphidy[i] * dphidy[j] + b * dphidx[i] * dphidx[j]) * wJac;
                 }
             }
-            B[mapX[i]] -= phi[i] * g * rho * wJac;
+            B[mapY[i]] -= phi[i] * g * rho * wJac;
         }
     } else if (problem->planarStrainStress == AXISYM){
         for (i = 0; i < nLoc; i++) {
@@ -946,7 +946,7 @@ void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX
                     A[mapY[i]][mapY[j]] += (dphidy[i] * a * xLoc * dphidy[j] + dphidx[i] * c * xLoc * dphidx[j]) * wJac;
                 }
             }
-            B[mapX[i]] -= phi[i] * xLoc * g * rho * wJac;
+            B[mapY[i]] -= phi[i] * xLoc * g * rho * wJac;
         }
     }
 }
@@ -1341,8 +1341,7 @@ void femElasticityAssembleElements(femProblem* problem){
             }
 
             weightedJac = jac * weight;
-
-            femSolverAssemble(solver, problem, mapX, mapY, phi, dphidx, dphidy, weightedJac, xLoc, space->n);
+            femSolverAssemble(solver, problem, mapX, mapY, phi, dphidx, dphidy, xLoc, weightedJac, space->n);
         }
     }
 }
@@ -1393,8 +1392,6 @@ double* femElasticitySolve(femProblem* problem){
         problem->soluce[2*i+1]= soluce[2*nodes->number[i]+1];
     }
     femFullSystem* fullSystem = problem->solver->solver;
-    printf("%le, %le\n", fullSystem->A[0][0], fullSystem->A[0][1]);
-    printf("%le, %le\n", fullSystem->A[1][0], fullSystem->A[1][1]);
     return problem->soluce;
 }
 
