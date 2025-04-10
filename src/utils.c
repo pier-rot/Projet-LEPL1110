@@ -739,7 +739,7 @@ void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX
                 A[mapY[i]][mapX[j]] += (c * dphidx[i] * dphidy[j] + b * dphidy[i] * dphidx[j]) * wJac;
                 A[mapY[i]][mapY[j]] += (a * dphidy[i] * dphidy[j] + b * dphidx[i] * dphidx[j]) * wJac;
             }
-            B[mapX[i]] -= phi[i] * g * rho * wJac;
+            B[mapY[i]] -= phi[i] * g * rho * wJac;
         }
     }
     else if (problem->planarStrainStress == AXISYM)
@@ -951,7 +951,7 @@ void femBandSystemAssemble(femBandSystem* system, femProblem* problem, int* mapX
     }
 }
 void femBandSystemAssembleNeumann(femProblem* problem){
-
+    femFullSystemAssembleNeumann(problem);
 }
 
 void femBandSystemApplyDirichlet(femProblem* problem){
@@ -966,29 +966,39 @@ void femBandSystemApplyDirichlet(femProblem* problem){
 }
 
 void femBandSystemConstrain(femBandSystem* system, int node, double value, int size){
-    // double** A;
-    // double* B;
-    // int i, size;
+    double** A = system->A;
+    double* B = system->B;
+    int i, j, jend, band = system->band;
 // 
     // A = system->A;
     // B = system->B;
     // size = system->size;
-    // if (node < 0 || node >= size) {
-        // fprintf(stderr, "Invalid node index: %d\n", node);
-        // return;
-    // }
+    if (node < 0 || node >= size) {
+        fprintf(stderr, "Invalid node index: %d\n", node);
+        return;
+    }
 // 
-    // for(i = 0; i < size; i++){
-        // B[i] -= A[i][node] * value;
-        // A[i][node] = 0.0;
-    // }
-// 
-    // for(i = 0; i < size; i++){
-        // A[node][i] = 0.0;
-    // }
-// 
-    // A[node][node] = 1.0;
-    // B[node] = value;
+    // Mettre à jour B en annulant les contributions de la colonne "node"
+    for (int i = 0; i < size; i++) {
+        int j = node - i;
+        if (j >= -band && j <= band) {
+            int k = j + band;
+            B[i] -= value * A[i][k];
+            A[i][k] = 0.0;
+        }
+    }
+
+    // Mettre à zéro la ligne correspondante
+    for (int j = -band; j <= band; j++) {
+        int col = node + j;
+        if (col >= 0 && col < size) {
+            int k = -j + band;
+            A[node][k] = 0.0;
+        }
+    }
+
+    A[node][node] = 1.0;
+    B[node] = value;
 }
 
 // OK
