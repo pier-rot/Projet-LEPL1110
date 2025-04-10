@@ -434,7 +434,7 @@ void _q1c0_dphidx(double xsi, double eta, double *dphidxsi, double *dphideta)
 }
 
 femDiscrete* femDiscreteCreate(int n, femElementType type){
-    femDiscrete* discrete = (femDiscrete*) malloc(sizeof(femDiscrete));
+    femDiscrete* discrete = malloc(sizeof(femDiscrete));
     if (discrete == NULL) {
         fprintf(stderr, "Memory allocation failed for femDiscrete structure.\n");
         return NULL;
@@ -593,8 +593,10 @@ double* femSolverEliminate(femSolver* solver){
 
 
 void femSolverAssemble(femSolver *solver, femProblem *problem, int *mapX, int *mapY, double *phi, double *dphidx, double *dphidy, double weightedJac, double xLoc, int nLoc){
+    printf("Assembling solver...\n");
     switch(solver->type) {
         case SOLVER_FULL:
+            printf("Full system assembly\n");
             femFullSystemAssemble((femFullSystem*)solver->solver, problem, mapX, mapY, phi, dphidx, dphidy, weightedJac, xLoc, nLoc);
             break;
         case SOLVER_BAND:
@@ -713,6 +715,8 @@ double* femFullSystemEliminate(femFullSystem* system, int size){
 }
 
 void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX, int* mapY, double* phi, double* dphidx, double* dphidy, double xLoc, double wJac, double nLoc){
+    printf("Assembling full system...\n");
+
     double** A = system->A;
     double* B = system->B;
     double a = problem->A;
@@ -720,6 +724,8 @@ void femFullSystemAssemble(femFullSystem* system, femProblem* problem, int* mapX
     double c = problem->C;
     double rho = problem->rho;
     double g = problem->g;
+
+    printf("Assembling full system in function femFullSystemAssemble() ...\n");
 
     if (problem->planarStrainStress == PLANAR_STRAIN || problem->planarStrainStress == PLANAR_STRESS){
         for(int i = 0; i < nLoc; i++){
@@ -931,14 +937,14 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     problem->conditions = NULL;
     int size = 2 * geo->nodes->nNodes;
     
-    problem->constrainedNodes = (int*)malloc(size * sizeof(int));
+    problem->constrainedNodes = malloc(size * sizeof(int));
     if (problem->constrainedNodes == NULL) {
         fprintf(stderr, "Memory allocation failed for constrained nodes.\n");
         free(problem);
         return NULL;
     }
 
-    problem->soluce = (double*)malloc(size * sizeof(double));
+    problem->soluce = malloc(size * sizeof(double));
     if (problem->soluce == NULL) {
         fprintf(stderr, "Memory allocation failed for solution vector.\n");
         free(problem->constrainedNodes);
@@ -946,7 +952,7 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
         return NULL;
     }
 
-    problem->residuals = (double*)malloc(size * sizeof(double));
+    problem->residuals = malloc(size * sizeof(double));
     if (problem->residuals == NULL) {
         fprintf(stderr, "Memory allocation failed for residuals vector.\n");
         free(problem->soluce);
@@ -1232,6 +1238,8 @@ void femElasticityAssembleElements(femProblem* problem){
 
             weightedJac = jac * weight;
 
+            printf("iElem = %d, xsi = %le, eta = %le, weight = %le, jac = %le\n", iElem, xsi, eta, weight, jac);
+
             femSolverAssemble(solver, problem, mapX, mapY, phi, dphidx, dphidy, weightedJac, xLoc, space->n);
         }
     }
@@ -1256,6 +1264,9 @@ void femElasticityAssembleNeumann(femProblem* problem){
         printf("Error: Unknown solver type.\n");
         return;
     }
+
+    printf("B", B[0]);
+
 
     //femFullSystem  *system = problem->system;
     femIntegration *rule = problem->ruleEdge;
