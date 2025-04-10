@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "utils.h"
+#include "glfem.h"
 
 #define MAXFILENAMELENGTH 256
 
@@ -65,6 +66,8 @@ int main(int argc, char const *argv[])
     
     
     double* displacement = malloc(geo->nodes->nNodes * sizeof(double));
+    //double *forcesX = malloc(geo->nodes->nNodes * sizeof(double));
+    //double *forcesY = malloc(geo->nodes->nNodes * sizeof(double));
     
     for (int i = 0; i < geo->nodes->nNodes; i++) {
        displacement[i] = sqrt(pow(soluce[2*i], 2) + pow(soluce[2*i+1], 2));
@@ -88,26 +91,54 @@ int main(int argc, char const *argv[])
     printf("Displacement min: %le\n", min);
     printf("Displacement max: %le\n", max);
 
-    // printf("Constrained nodes : \n");
-    // for (int i = 0; i < geo->nodes->nNodes; i++) {
-    //     if (problem->constrainedNodes[2*i] != -1) {
-    //         printf("  %d : %d \n",i,problem->constrainedNodes[2*i]); }
-    //     if (problem->constrainedNodes[2*i+1] != -1) {
-    //         printf("  %d : %d \n",i,problem->constrainedNodes[2*i+1]); } }
+    //
+    // Visualisation du maillage
+    //
 
-    // printf("Conditions : \n");
-    // for (int i = 0; i < problem->nBoundaryConditions; i++) {
-    //     femBoundaryCondition* condition = problem->conditions[i];
-    //     printf("Condition %d: domain = %s, type = %d, value = %le\n", i, condition->domain->name, condition->type, condition->value);
-    //     femDomain* domain = condition->domain;
-    //     int nElem = domain->nElem;
-    //     int* elem = domain->elem;
-    //     printf("Constrained nodes: \n");
-    //     for (int i = 0; i < nElem; i++){
-    //         printf("  %d : %d \n", i, elem[i]);
-    //     }
-    // }
-    // femElasticityFullPrint(problem);
+    int mode = 1; 
+    int domain = 0;
+    int freezingButton = FALSE;
+    double t, told = 0;
+    char theMessage[MAXNAME];
+   
+ 
+    GLFWwindow *window = glfemInit("EPL1110 : Recovering forces on constrained nodes");
+    glfwMakeContextCurrent(window);
+
+    do {
+        int w,h;
+        glfwGetFramebufferSize(window, &w, &h);
+        glfemReshapeWindows(geo->nodes, w, h);
+
+        t = glfwGetTime();  
+        if (glfwGetKey(window, 'D') == GLFW_PRESS) { mode = 0; }
+        if (glfwGetKey(window, 'V') == GLFW_PRESS) { mode = 1; }
+        if (glfwGetKey(window, 'N') == GLFW_PRESS && freezingButton == FALSE) { domain++; freezingButton = TRUE; told = t; }
+        if (t - told > 0.5) { freezingButton = FALSE; }
+        
+        if (mode == 0)
+        {
+            domain = domain % geo->nDomains;
+            glfemPlotDomain( geo->domains[domain]); 
+            sprintf(theMessage, "%s : %d ",geo->domains[domain]->name,domain);
+            glColor3f(1.0,0.0,0.0); glfemMessage(theMessage);
+        }
+        else if (mode == 1)
+        {
+            glfemPlotField(geo->mesh,displacement);
+            glfemPlotMesh(geo->mesh); 
+            sprintf(theMessage, "Number of elements : %d ",geo->mesh->nElem);
+            glColor3f(1.0,0.0,0.0); glfemMessage(theMessage);
+        }
+        
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+
+    } while(glfwGetKey(window,GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+             glfwWindowShouldClose(window) != 1);
+
+    free(displacement);
+    
     geoFree(geo);
     
     // femFree(problem);
