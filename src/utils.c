@@ -1400,7 +1400,7 @@ double* femElasticitySolve(femProblem* problem){
 
     printf("hello");
 
-    femFullSystemInit(problem);
+    //femFullSystemInit(problem);
 
     femElasticityAssembleElements(problem); // OK
     femElasticityAssembleNeumann(problem); // TODO
