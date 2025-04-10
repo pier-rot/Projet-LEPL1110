@@ -625,6 +625,20 @@ void femFullSystemInit(femFullSystem* system){
     }
 }
 
+void femSolverInit(femSolver* solver){
+    if (solver->type == SOLVER_FULL){
+        femFullSystemInit((femFullSystem*)solver->solver);
+    }
+    else if (solver->type == SOLVER_BAND){
+        femBandSystemInit((femBandSystem*)solver->solver, solver->size);
+    }
+    else{
+        fprintf(stderr, "Unknown solver type.\n");
+
+    }
+    
+}
+
 femFullSystem* femFullSystemCreate(int size){
     femFullSystem* system = (femFullSystem*) malloc(sizeof(femFullSystem));
     if (system == NULL) {
@@ -1401,9 +1415,9 @@ double* femElasticitySolve(femProblem* problem){
     femNodes* nodes = problem->geometry->nodes;
     double* soluce;
 
-    printf("hello");
+    printf("Solving...\n");
 
-    //femFullSystemInit(problem);
+    femSolverInit(solver); 
 
     femElasticityAssembleElements(problem); // OK
     femElasticityAssembleNeumann(problem); // TODO
