@@ -9,6 +9,12 @@ double geoSizeDefault(double x, double y)       { return theGeometry.h; }
 
 double geoGmshSize(int dim, int tag, double x, double y, double z, double lc, void *data)
                                                 { return theGeometry.geoSize(x,y);    }
+
+double geoSize(double x, double y) 
+{
+    return 0.005;
+}                                               
+                                                
 void geoInitialize() 
 {
     int ierr;
@@ -392,6 +398,7 @@ void geoMeshGenerate() {
         gmshModelMeshGenerate(2,&ierr);  }
   
     if (theGeometry->elementType == FEM_TRIANGLE) {
+        geoSetSizeCallback(geoSize);
         gmshOptionSetNumber("Mesh.SaveAll",1,&ierr);
         gmshModelMeshGenerate(2,&ierr);  }
 
