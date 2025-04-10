@@ -999,8 +999,8 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
         return NULL;
     }  
     
-    femDiscretePrint(problem->space);   
-    femDiscretePrint(problem->spaceEdge); 
+    //femDiscretePrint(problem->space);   
+    //femDiscretePrint(problem->spaceEdge); 
 
     return problem;
 }
