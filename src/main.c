@@ -102,7 +102,7 @@ int main(int argc, char const *argv[])
     char theMessage[MAXNAME];
    
  
-    GLFWwindow *window = glfemInit("EPL1110 : Recovering forces on constrained nodes");
+    GLFWwindow *window = glfemInit("EPL1110 : Maillage et calcul de champs de contraintes");
     glfwMakeContextCurrent(window);
 
     do {
