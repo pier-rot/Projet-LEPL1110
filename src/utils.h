@@ -192,7 +192,7 @@ void femSolverSystemConstrain(femSolver* solver, int node, double value);
 double* femSolverEliminate(femSolver* solver);
 
 // Linear elasticity functions
-femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase);
+femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase, femSolverType solverType, femRenumberType renumberType);
 femProblem* femElasticityRead(femGeo* geo, const char*, femSolverType solverType, femRenumberType renumberType);
 void femElasticityPrint(femProblem* problem);
 void femElasticityFullPrint(femProblem* problem);

@@ -105,7 +105,7 @@ int main(int argc, char const *argv[])
     }
     */
 
-    femProblem* theProblem = femElasticityCreate(geo,E,nu,rho,g,t2,iCase);
+    femProblem* theProblem = femElasticityCreate(geo,E,nu,rho,g,t2,iCase,solverType, renumberType);
     femElasticityAddBoundaryCondition(theProblem,"HandleRight",DIRICHLET_X,0.0);
     femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0.0);
     femElasticityAddBoundaryCondition(theProblem,"AttachPoint",NEUMANN_Y,-10e7);

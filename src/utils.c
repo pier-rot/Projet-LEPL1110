@@ -542,14 +542,16 @@ void femDiscretePrint(femDiscrete *mySpace)
 femSolver* femSolverFullCreate(int size){
     femSolver* solver = (femSolver*) malloc(sizeof(femSolver));
     solver->type = SOLVER_FULL;
-    solver->solver = femFullSystemCreate(size);
+    solver->solver = (femFullSystem*)femFullSystemCreate(size);
+    solver->size = size;
     return solver;
 }
 
 femSolver* femSolverBandCreate(int size, int band){
-    femSolver* solver = (femSolver*) femSolverCreate(size);
+    femSolver* solver = (femSolver*) malloc(sizeof(femSolver));
     solver->type = SOLVER_BAND;
-    solver->solver = femBandSystemCreate(band, size);
+    solver -> size = size;
+    solver->solver = (femBandSystem*)femBandSystemCreate(band, size);
     return solver;
 }
 
@@ -880,8 +882,10 @@ int inBand(int band, int row, int col){
 
 
 // Linear elasticity functions
-femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase) {
-    femProblem* problem = (femProblem*)malloc(sizeof(femProblem));
+femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, double g, double T, femElasticCase iCase,
+    femSolverType solverType,femRenumberType renumberType ) {
+
+    femProblem* problem = malloc(sizeof(femProblem));
 
     if (problem == NULL) {
         fprintf(stderr, "Memory allocation failed for femProblem structure.\n");
@@ -938,7 +942,7 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     }
 
     for(int i = 0; i<size; i++){
-        problem->constrainedNodes[i] = -1.0;
+        problem->constrainedNodes[i] = -1;
         problem->soluce[i] = 0.0;
         problem->residuals[i] = 0.0;
     }
@@ -954,15 +958,19 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
     problem->spaceEdge = femDiscreteCreate(2, FEM_EDGE);
     problem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
 
+    printf("Number of nodes: %d\n", geo->nodes->nNodes);
     
-    if (problem->solver->type == SOLVER_FULL) {
-        problem->solver->solver = (femFullSystem*) femFullSystemCreate(size);
-    } else if (problem->solver->type == SOLVER_BAND) {
-        femRenumberType renumType = problem ->renumberType;
+    
+    if (solverType == SOLVER_FULL) {
+        printf("Full system solver\n");
+        problem->solver = femSolverFullCreate(size);
+        //problem->solver->solver = (femFullSystem*) femFullSystemCreate(size);
+    } else if (solverType == SOLVER_BAND) {
         int band = femComputeBand(geo);
-        problem->solver->solver = (femBandSystem*) femBandSystemCreate(band, size);
+        //problem->solver->solver = (femBandSystem*) femBandSystemCreate(band, size);
+        problem->solver = femSolverBandCreate(size, band);
         femMesh* theMesh = geo->mesh;
-        femMeshRenumber(theMesh, renumType);
+        femMeshRenumber(theMesh, renumberType);
         int band_renum = femComputeBand(geo); //TO DO 
 
         if (band_renum != band) {
@@ -976,6 +984,9 @@ femProblem* femElasticityCreate(femGeo* geo, double E, double nu, double rho, do
         free(problem);
         return NULL;
     }  
+    
+    femDiscretePrint(problem->space);   
+    femDiscretePrint(problem->spaceEdge); 
 
     return problem;
 }
@@ -997,7 +1008,7 @@ femProblem* femElasticityRead(femGeo* geo, const char* problemPath, femSolverTyp
     fscanf(file, "g : %le\n", &g);
     fscanf(file, "T : %le\n", &T);
 
-    femProblem* problem = femElasticityCreate(geo, E, nu, rho, g, T, iCase);
+    femProblem* problem = femElasticityCreate(geo, E, nu, rho, g, T, iCase, solverType, renumberType);
     int nCond;
     fscanf(file, "Conditions : %d\n", &nCond);
     for (int i = 0; i < nCond; i++){
@@ -1006,7 +1017,7 @@ femProblem* femElasticityRead(femGeo* geo, const char* problemPath, femSolverTyp
         double value;
         fscanf(file, "Type : %s\n", condType);
         fscanf(file, "Domaine : %s\n", domainName);
-        if(geoGetDomain(geo, domainName) == -1){
+        if(geoGetDomain2(geo, domainName) == -1){
             fprintf(stderr, "Domain not found: %s\n", domainName);
             free(condType);
             free(domainName);
@@ -1105,7 +1116,7 @@ void femElasticityFullPrint(femProblem* problem){
 }
 
 void femElasticityAddBoundaryCondition(femProblem* problem, char* name, femBoundaryType type, double value){
-    int iDomain = geoGetDomain(problem->geometry, name);
+    int iDomain = geoGetDomain2(problem->geometry, name);
     if (iDomain == -1) {
         fprintf(stderr, "Domain not found: %s\n", name);
         return;
@@ -1387,6 +1398,10 @@ double* femElasticitySolve(femProblem* problem){
     femNodes* nodes = problem->geometry->nodes;
     double* soluce;
 
+    printf("hello");
+
+    femFullSystemInit(problem);
+
     femElasticityAssembleElements(problem); // OK
     femElasticityAssembleNeumann(problem); // TODO
     femElasticityApplyDirichlet(problem); // TODO
@@ -1398,6 +1413,25 @@ double* femElasticitySolve(femProblem* problem){
     }
     return problem->soluce;
 }
+
+void femFullSystemInit(femFullSystem *mySystem){
+    int i,size = mySystem->size;
+    for (i=0 ; i < size*(size+1) ; i++) 
+        mySystem->B[i] = 0;
+
+}
+
+void femBandSystemInit(femBandSystem *mySystem)
+{
+    int i;
+    int size = mySystem->size;  
+    int band = mySystem->band;
+
+    for (i = 0; i < size*(band+1); i++)
+        mySystem->B[i] = 0.0;
+        
+}
+
 
 
 
