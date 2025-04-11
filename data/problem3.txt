@@ -13,7 +13,7 @@ Domaine : Bottom
 Valeur : 0.0000000e+00
 Type : NEUMANN_Y
 Domaine : AttachPoint
-Valeur : -1.0000000e+08
+Valeur : -2.0000000e+07
 Type : DIRICHLET_X
 Domaine : HandleLeft
 Valeur : 0.0000000e+00
