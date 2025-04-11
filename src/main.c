@@ -71,46 +71,26 @@ int main(int argc, char const *argv[])
     }
 
     double min = displacement[0];
+    int minNode = 0;
     double max = displacement[0];
+    int maxNode = 0;
     for (int i = 1; i < geo->nodes->nNodes; i++) {
         if (displacement[i] < min) {
+            minNode = i;
             min = displacement[i];
         }
         if (displacement[i] > max) {
+            maxNode = i;
             max = displacement[i];
         }
     }
-    // printf("Displacement:\n");
-    // for (int i = 0; i < geo->nodes->nNodes; i++) {
-    //     printf("Node %d: %le\n", i, displacement[i]);
-    // }
+
     printf("\n");
-    printf("Displacement min: %le\n", min);
-    printf("Displacement max: %le\n", max);
+    printf("Displacement min = %le at node %d\n", min, minNode);
+    printf("Displacement max = %le at node %d\n", max, maxNode);
 
-    // printf("Constrained nodes : \n");
-    // for (int i = 0; i < geo->nodes->nNodes; i++) {
-    //     if (problem->constrainedNodes[2*i] != -1) {
-    //         printf("  %d : %d \n",i,problem->constrainedNodes[2*i]); }
-    //     if (problem->constrainedNodes[2*i+1] != -1) {
-    //         printf("  %d : %d \n",i,problem->constrainedNodes[2*i+1]); } }
-
-    // printf("Conditions : \n");
-    // for (int i = 0; i < problem->nBoundaryConditions; i++) {
-    //     femBoundaryCondition* condition = problem->conditions[i];
-    //     printf("Condition %d: domain = %s, type = %d, value = %le\n", i, condition->domain->name, condition->type, condition->value);
-    //     femDomain* domain = condition->domain;
-    //     int nElem = domain->nElem;
-    //     int* elem = domain->elem;
-    //     printf("Constrained nodes: \n");
-    //     for (int i = 0; i < nElem; i++){
-    //         printf("  %d : %d \n", i, elem[i]);
-    //     }
-    // }
-    // femElasticityFullPrint(problem);
     geoFree(geo);
     
-    // femFree(problem);
     exit(EXIT_SUCCESS);
     return 0;
 }
