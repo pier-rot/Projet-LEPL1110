@@ -4,12 +4,15 @@
 
 Repo du projet : https://github.com/pier-rot/Projet-LEPL1110
 
+Pour visualiser la géométrie et ses paramètres : https://www.desmos.com/calculator/urnvelt10o
+
 Après avoir cloner la repo ou décompresser l'archive :
 
+Sous linux :
 ```bash
 cd Projet-LEPL1110
 cmake CMakeLists.txt
-make
+make run
 ```
 Par défaut, les fichiers `data.txt` et `problem.txt` dans le dossier `data` sont utilisés.
 
@@ -26,15 +29,20 @@ Disclaimer : Si le fichier qui définit pas le probleme n'est pas conforme au te
 Les sections de lignes avec "//" sont des commentaires ou les alternatives possibles et ne doivent pas être inclues dans le fichier.
 
 ```txt
-Problem type    : Planar_Stress // Planar_Strain ou Axisym
-E               : 2.1100000e+11 // Module de Young du materiau
-nu              : 3.0000000e-01 // Coefficient de Poisson entre -1 et 1/2 (exclus)
-rho             : 7.8500000e+01 // La densité du matériaux
+Problem type    : 0
+E               : 1.7200000e+10
+nu              : 3.0000000e-01
+rho             : 7.8500000e+03
 g               : 9.8100000e+00
-T               : 1.0000000e+02 // La tension dans la corde [N/m]
-Conditions de Neumann : 2
-Type : Neumann \\ ou Dirichlet
-Direction : X \\ Y ou XY
-Domaine : NomDomaine \\ Nome du domaine de la conditions
-Valeur : 1.0000000e+00 \\ Valeur de la condition
+T               : 0.0000000e+00
+Conditions : 3
+Type : DIRICHLET_X
+Domaine : HandleRight
+Valeur : 0.0000000e+00
+Type : DIRICHLET_Y
+Domaine : Bottom
+Valeur : 0.0000000e+00
+Type : NEUMANN_Y
+Domaine : AttachPoint
+Valeur : -1.0000000e+07
 ```
