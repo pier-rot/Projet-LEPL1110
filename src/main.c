@@ -63,6 +63,8 @@ int main(int argc, char const *argv[])
 
     double* soluce = problem->soluce;
     soluce = femElasticitySolve(problem);
+    femNodes *theNodes = geo->nodes;
+    double deformationFactor = 10.0;
     
     
     double* displacement = malloc(geo->nodes->nNodes * sizeof(double));
@@ -70,6 +72,8 @@ int main(int argc, char const *argv[])
     //double *forcesY = malloc(geo->nodes->nNodes * sizeof(double));
     
     for (int i = 0; i < geo->nodes->nNodes; i++) {
+        //theNodes->X[i] += soluce[2*i+0]*deformationFactor;
+        //theNodes->Y[i] += soluce[2*i+1]*deformationFactor;
        displacement[i] = sqrt(pow(soluce[2*i], 2) + pow(soluce[2*i+1], 2));
     }
 
