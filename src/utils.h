@@ -73,6 +73,7 @@ typedef struct {
     double** A;
     double* B;
     int band;
+    int size;
 } femBandSystem;
 
 typedef struct {
